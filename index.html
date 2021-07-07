@@ -4,6 +4,7 @@
       font-family: "avenir next", Arial, sans-serif;
       font-size: 12px;
       margin: 0;
+      background: lightgray;
     }
   </style>
 </head>
@@ -14,6 +15,7 @@
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <script>
+  var defaultBubbleColor = "#0074D9";
   var constructor_standings, constructors, races, contructor_wins;
   var constructor_arr = [];
 
@@ -22,12 +24,13 @@
     constructor_standings = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructor_standings.csv");
     constructors = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructors.csv");
     races = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/races.csv");
+    console.log("constructors", constructors);
 
     delete constructor_standings.columns;
     delete constructors.columns;
     delete races.columns;
 
-    console.log("constructor_standings", constructor_standings);
+    console.log("constructors", constructors);
     contructor_wins = {}
     for (i = 0; i < constructor_standings.length; i++) {
       let record = constructor_standings[i];
@@ -35,7 +38,8 @@
         contructor_wins[record.constructorId] = {
           id: record.constructorId,
           name: (constructors.find(c => c.constructorId == record.constructorId)).name,
-          wins: 0
+          wins: 0,
+          color: (constructors.find(c => c.constructorId == record.constructorId)).color
         }
       }
       if (record.position === "1") {
@@ -57,6 +61,7 @@
   function bubbleChart() {
     const width = window.innerWidth;
     const height = window.innerHeight;
+
 
     // location to centre the bubbles
     const centre = {x: width / 2, y: height / 2};
@@ -98,17 +103,17 @@
     function createNodes(rawData) {
       // use max size in the data as the max in the scale's domain
       // note we have to ensure that size is a number
-      const maxSize = d3.max(rawData, d => 4+(+d.wins)*5);
+      const maxSize = d3.max(rawData, d => 4 + (+d.wins) * 5);
 
       // size bubbles based on area
       const radiusScale = d3.scaleSqrt()
         .domain([0, maxSize])
-        .range([0, height/12])
+        .range([0, height / 12])
 
       // use map() to convert raw data into node data
       const myNodes = rawData.map(d => ({
         ...d,
-        radius: radiusScale(4+(+d.wins)*5),
+        radius: radiusScale(4 + (+d.wins) * 5),
         size: +d.size,
         x: Math.random() * 900,
         y: Math.random() * 800
@@ -126,8 +131,9 @@
       // create svg element inside provided selector
       svg = d3.select(selector)
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
+        .attr('width', 0.9 * width)
+        .attr('height', 0.9 * height)
+        .attr('style', 'backgound: lightgray;');
 
       // bind nodes data to circle elements
       const elements = svg.selectAll('.bubble')
@@ -139,15 +145,23 @@
         .append('circle')
         .classed('bubble', true)
         .attr('r', d => d.radius)
-        .attr('fill', d => fillColour(d.id))
+        .attr('fill', function (d) {
+          if (d.color != "") {
+            return d.color;
+          }
+          return defaultBubbleColor;
+        })
+        .on("mouseover", handleMouseOver)
+        .on("mouseout", handleMouseOut);;
 
       // labels
       labels = elements
         .append('text')
         .attr('dy', '.3em')
         .style('text-anchor', 'middle')
-        .style('font-size', 10)
-        .text(d => d.name+": "+d.wins);
+        .style('font-size', 12)
+        .style('color', d => invertColor(d.color))
+        .text(d => d.wins > 0 ? d.name + ": " + d.wins : "");
 
       // set simulation's nodes to our newly created nodes array
       // simulation starts running automatically once nodes are set
@@ -172,10 +186,66 @@
     // return chart function from closure
     return chart;
   }
+
   let myBubbleChart = bubbleChart();
 
   function display(data) {
     myBubbleChart('#vis', data);
+  }
+
+  function invertColor(hex) {
+    if (hex.indexOf('#') === 0) {
+      hex = hex.slice(1);
+    }
+    // convert 3-digit hex to 6-digits.
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length !== 6) {
+      hex = defaultBubbleColor;
+    }
+    // invert color components
+    var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
+      g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
+      b = (255 - parseInt(hex.slice(4, 6), 16)).toString(16);
+    // pad each with zeros and return
+    return '#' + padZero(r) + padZero(g) + padZero(b);
+  }
+
+  function padZero(str, len) {
+    len = len || 2;
+    var zeros = new Array(len).join('0');
+    return (zeros + str).slice(-len);
+  }
+
+  // Create Event Handlers for mouse
+  function handleMouseOver(d, i) {  // Add interactivity
+
+    // Use D3 to select element, change color and size
+    d3.select(this).
+    attr("r", d.radius + 20);
+
+    // // Specify where to put label of text
+    // svg.append("text").attr({
+    //   id: "t" + d.x + "-" + d.y + "-" + i,  // Create an id for text so we can select it later for removing on mouseout
+    //   x: function () {
+    //     return xScale(d.x) - 30;
+    //   },
+    //   y: function () {
+    //     return yScale(d.y) - 15;
+    //   }
+    // })
+    //   .text(function () {
+    //     return [d.x, d.y];  // Value of the text
+    //   });
+  }
+
+  function handleMouseOut(d, i) {
+    // Use D3 to select element, change color back to normal
+    d3.select(this).attr("r", d.radius);
+
+    // Select text by id and then remove
+    d3.select("#t" + d.x + "-" + d.y + "-" + i).remove();  // Remove text location
   }
 
 
