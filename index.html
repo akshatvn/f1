@@ -6,18 +6,61 @@
       margin: 0;
       background: lightgray;
     }
+
+    #vis {
+      position: absolute;
+      top: 0;
+    }
+
+    table {
+      position: absolute;
+      top: 10%;
+      right: 1%;
+    }
+
+    td {
+      min-width: 120px;
+      border: black;
+      border-style: ridge;
+      padding: 5;
+      border-width: thin;
+    }
+
+    td.data {
+      min-width: 220px;
+    }
   </style>
 </head>
 <body onload="init()">
-<h1>Akshat is working on his f1 project. Come back later to see what's up</h1>
+<h1>F1 Grand Prix Wins</h1>
 <div id='vis'></div>
+<table>
+  <tr>
+    <td>Constructor</td>
+    <td id="td-constructor-name" class="data"></td>
+  </tr>
+  <tr>
+    <td>Nationality</td>
+    <td id="td-constructor-nationality" class="data"></td>
+  </tr>
 
+  <tr>
+    <td>Races</td>
+    <td id="td-constructor-races" class="data"></td>
+  </tr>
+  <tr>
+    <td>Wins</td>
+    <td id="td-constructor-wins" class="data"></td>
+  </tr>
+
+</table>
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <script>
   var defaultBubbleColor = "#0074D9";
   var constructor_standings, constructors, races, contructor_wins;
   var constructor_arr = [];
+  var selectedConstructor = null;
 
   async function init() {
 
@@ -31,20 +74,24 @@
     delete races.columns;
 
     console.log("constructors", constructors);
-    contructor_wins = {}
+    contructor_wins = {};
     for (i = 0; i < constructor_standings.length; i++) {
       let record = constructor_standings[i];
       if (!contructor_wins[record.constructorId]) {
+        let currentConstructor = constructors.find(c => c.constructorId == record.constructorId)
         contructor_wins[record.constructorId] = {
           id: record.constructorId,
-          name: (constructors.find(c => c.constructorId == record.constructorId)).name,
+          name: (currentConstructor).name,
           wins: 0,
-          color: (constructors.find(c => c.constructorId == record.constructorId)).color
+          races: 0,
+          nationality: currentConstructor.nationality,
+          color: (currentConstructor).color
         }
       }
       if (record.position === "1") {
-        contructor_wins[record.constructorId].wins += 1
+        contructor_wins[record.constructorId].wins += 1;
       }
+      contructor_wins[record.constructorId].races += 1;
     }
 
     console.log("contructor_wins: ", contructor_wins);
@@ -67,7 +114,7 @@
     const centre = {x: width / 2, y: height / 2};
 
     // strength to apply to the position forces
-    const forceStrength = 0.03;
+    const forceStrength = 0.02;
 
     // these will be set in createNodes and chart functions
     let svg = null;
@@ -77,7 +124,7 @@
 
     // charge is dependent on size of the bubble, so bigger towards the middle
     function charge(d) {
-      return Math.pow(d.radius, 2.0) * 0.01
+      return Math.pow(d.radius, 2.0) * 0.05
     }
 
     // create a force simulation and add forces to it
@@ -139,36 +186,42 @@
       const elements = svg.selectAll('.bubble')
         .data(nodes, d => d.id)
         .enter()
-        .append('g')
+        .append('g');
 
       bubbles = elements
         .append('circle')
         .classed('bubble', true)
         .attr('r', d => d.radius)
+        .attr('constructor-id', d => d.id)
         .attr('fill', function (d) {
           if (d.color != "") {
             return d.color;
           }
           return defaultBubbleColor;
         })
-        .on("mouseover", handleMouseOver)
-        .on("mouseout", handleMouseOut);;
+        .on("mouseover", handleMouseOverBubble)
+        .on("mouseout", handleMouseOutBubble);
 
       // labels
       labels = elements
         .append('text')
+        .attr('constructor-id', d => d.id)
+        .classed('bubble-label', true)
         .attr('dy', '.3em')
+        .attr('id', d => "bubble-label-" + d.id)
         .style('text-anchor', 'middle')
         .style('font-size', 12)
         .style('color', d => invertColor(d.color))
-        .text(d => d.wins > 0 ? d.name + ": " + d.wins : "");
+        .text(d => d.wins > 0 ? d.name + ": " + d.wins : "")
+        .on("mouseover", handleMouseOverText)
+        .on("mouseout", handleMouseOutText);
 
       // set simulation's nodes to our newly created nodes array
       // simulation starts running automatically once nodes are set
       simulation.nodes(nodes)
         .on('tick', ticked)
         .restart();
-    }
+    };
 
     // callback function called after every tick of the force simulation
     // here we do the actual repositioning of the circles based on current x and y value of their bound node data
@@ -219,28 +272,46 @@
   }
 
   // Create Event Handlers for mouse
-  function handleMouseOver(d, i) {  // Add interactivity
+  function handleMouseOverBubble(d, i) {  // Add interactivity
 
     // Use D3 to select element, change color and size
-    d3.select(this).
-    attr("r", d.radius + 20);
-
-    // // Specify where to put label of text
-    // svg.append("text").attr({
-    //   id: "t" + d.x + "-" + d.y + "-" + i,  // Create an id for text so we can select it later for removing on mouseout
-    //   x: function () {
-    //     return xScale(d.x) - 30;
-    //   },
-    //   y: function () {
-    //     return yScale(d.y) - 15;
-    //   }
-    // })
-    //   .text(function () {
-    //     return [d.x, d.y];  // Value of the text
-    //   });
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    populateCurrentConstructorTable(selectedConstructor);
+    console.log("selected constructor data: ", selectedConstructor);
+    d3.select(this).attr("r", d.radius * 1.2);
   }
 
-  function handleMouseOut(d, i) {
+  function populateCurrentConstructorTable(selectedConstructor) {
+    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
+    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
+    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
+    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+  }
+
+  function clearCurrentConstructorTable() {
+    document.getElementById("td-constructor-name").innerHTML = '';
+    document.getElementById("td-constructor-nationality").innerHTML = '';
+    document.getElementById("td-constructor-races").innerHTML = '';
+    document.getElementById("td-constructor-wins").innerHTML = '';
+  }
+
+  function handleMouseOutBubble(d, i) {
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
+    // Use D3 to select element, change color back to normal
+    d3.select(this).attr("r", d.radius);
+
+
+  }
+
+  // Create Event Handlers for mouse
+  function handleMouseOverText(d, i) {  // Add interactivity
+
+    // Use D3 to select element, change color and size
+    d3.select(this).attr("r", d.radius * 1.2);
+  }
+
+  function handleMouseOutText(d, i) {
     // Use D3 to select element, change color back to normal
     d3.select(this).attr("r", d.radius);
 
