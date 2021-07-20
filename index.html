@@ -113,20 +113,35 @@
   </div>
 </div>
 <div id="page-3" class="page closed">
+  <h2 id="page-3-title">Driver History</h2>
+  <button id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">< Back to Constructor</button>
   <div id='vis-driver'></div>
 </div>
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <script>
   var defaultBubbleColor = "#0074D9";
-  var constructor_standings, constructors, races, contructor_wins, results;
+  var constructors, races, contructor_wins, results;
   var constructor_arr = [];
   var driver_arr = [];
   var selectedConstructor = null;
+  var windowConstructor = null;
   var selectedDriver = null;
   var drivers = null;
 
+
+  async function loadSingleDriverPage(selectedDriver) {
+    const usefulResults = results.filter(c => c.driverId == selectedDriver.id);
+    console.log("loadSingleDriverPage usefulResults", usefulResults);
+
+    document.getElementById('page-3-title').innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname + "'s Career at a Glance";
+    document.getElementById('page-3-back-btn').innerHTML = "< Back to " + windowConstructor.name
+
+    document.getElementById('page-3').classList.toggle('closed');
+  }
+
   async function loadDriversPage(selectedConstructor) {
+    windowConstructor = selectedConstructor;
     driver_arr = [];
     if (!drivers) {
       drivers = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/drivers.csv");
@@ -143,7 +158,7 @@
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
-    let usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);
+    const usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);
     console.log("usefulResults", usefulResults);
 
     let usefulDrivers = [];
@@ -197,6 +212,12 @@
     display(driver_arr, '#vis-constructor-drivers', true);
     document.getElementById('page-2').classList.toggle('closed');
 
+  }
+
+  function goToConstructorPageFromDriverHistory() {
+    document.getElementById('page-3').classList.toggle('closed');
+    display(constructor_arr, '#vis-all-constructors');
+    document.getElementById('page-2').classList.toggle('closed');
   }
 
   function goToConstructorsPageFromDrivers() {
@@ -462,6 +483,11 @@
       console.log("selected constructor", selectedConstructor);
       document.getElementById('page-1').classList.toggle('closed');
       loadDriversPage(selectedConstructor);
+    } else if (this.getAttribute("entity-type") == "driver") {
+      selectedDriver = driver_arr.find(c => c.id == d.id);
+      console.log("selected driver", selectedDriver);
+      document.getElementById('page-2').classList.toggle('closed');
+      loadSingleDriverPage(selectedDriver, selectedConstructor);
     }
   }
 
