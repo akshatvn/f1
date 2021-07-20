@@ -135,6 +135,14 @@
           <td id="wins-for-con">Wins</td>
           <td id="td-driver-wins" class="data"></td>
         </tr>
+        <tr>
+          <td>First Season</td>
+          <td id="td-driver-first-yr" class="data"></td>
+        </tr>
+        <tr>
+          <td>Last Season</td>
+          <td id="td-driver-last-yr" class="data"></td>
+        </tr>
       </table>
     </div>
   </div>
@@ -295,6 +303,7 @@
       .keys(allConstructors)
       (chartData);
 
+
     svg.append("g")
       .selectAll("g")
       .data(stackedData)
@@ -364,7 +373,7 @@
       results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
-    console.log("results", results);
+    // console.log("results", results);
     document.getElementById('page-2-title').innerHTML = "Top " + selectedConstructor.name + " Drivers";
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
@@ -390,6 +399,7 @@
     var driverWins = {};
     for (i = 0; i < usefulResults.length; i++) {
       let record = usefulResults[i];
+      let race = races.find(d => d.raceId == record.raceId);
       if (!driverWins[record.driverId]) {
         let currentDriver = drivers.find(d => d.driverId == record.driverId)
         driverWins[record.driverId] = {
@@ -409,8 +419,20 @@
         driverWins[record.driverId].wins += 1;
         driverWins[record.driverId].bubbleRadius = driverWins[record.driverId].wins;
       }
-      driverWins[record.driverId].races += 1;
+      if (race) {
+        let raceYear = parseInt(race.year);
+        driverWins[record.driverId].maxYear = driverWins[record.driverId].maxYear || raceYear;
+        if (driverWins[record.driverId].maxYear < raceYear) {
+          driverWins[record.driverId].maxYear = raceYear
+        }
 
+        if (!driverWins[record.driverId].minYear || driverWins[record.driverId].minYear > raceYear) {
+          driverWins[record.driverId].minYear = raceYear;
+        }
+      }
+
+
+      driverWins[record.driverId].races += 1;
     }
     console.log("driverWins", driverWins);
 
@@ -722,6 +744,8 @@
     document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
     document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
     document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
+    document.getElementById("td-driver-first-yr").innerHTML = selectedDriver.minYear;
+    document.getElementById("td-driver-last-yr").innerHTML = selectedDriver.maxYear;
   }
 
   function clearCurrentDriverTable() {
@@ -729,6 +753,8 @@
     document.getElementById("td-driver-nationality").innerHTML = '';
     document.getElementById("td-driver-races").innerHTML = '';
     document.getElementById("td-driver-wins").innerHTML = '';
+    document.getElementById("td-driver-first-yr").innerHTML = '';
+    document.getElementById("td-driver-last-yr").innerHTML = '';
   }
 
   function clearCurrentConstructorTable() {
