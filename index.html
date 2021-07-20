@@ -10,7 +10,7 @@
 
     .vis {
       top: 0;
-      background: darkgray;
+      background: lightgray;
     }
 
     table {
@@ -20,7 +20,7 @@
     }
 
     td {
-      min-width: 120px;
+      /*min-width: 40px;*/
       border: black;
       border-style: ridge;
       padding: 5;
@@ -28,7 +28,7 @@
     }
 
     td.data {
-      min-width: 220px;
+      /*min-width: 40px;*/
     }
 
     h1, h2 {
@@ -68,6 +68,7 @@
 
       background-color: #04AA6D;
       color: #ffffff;
+      margin: 10%;
     }
 
     .float-container .custom-tooltip {
@@ -136,7 +137,6 @@
         </tr>
       </table>
     </div>
-    <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
   </div>
 </div>
 <div id="page-3" class="page closed">
@@ -147,15 +147,7 @@
     <div id="driver-year-detail" class="float-child custom-tooltip closed">
       <table>
         <tr>
-          <td>Constructor</td>
-          <td id="td-driver-year-constructor" class="data"></td>
-        <tr>
-          <td>Points</td>
           <td id="td-driver-year-points" class="data"></td>
-        </tr>
-        <tr>
-          <td>Nationality</td>
-          <td id="td-driver-year-wins" class="data"></td>
         </tr>
       </table>
     </div>
@@ -204,7 +196,7 @@
     var chartData = []; // array of {year:, constructor: points}
     let groupedData = {};
     let allConstructors = [];
-    let addedYears = [];
+    let chartYears = [];
     let maxPoints = 0;
     let yearPoints = {};
 
@@ -226,9 +218,6 @@
       if (allConstructors.indexOf(constructor.constructorId) == -1) {
         allConstructors.push(constructor.constructorId);
       }
-      if (addedYears.indexOf(race.year) == -1) {
-        addedYears.push(race.year)
-      }
     }
 
     console.log("groupedData", groupedData);
@@ -248,13 +237,15 @@
         }
       }
     }
+    chartData = chartData.filter(c => c.totalPoints > 0);
+    chartYears = chartData.map(c => c.year);
 
     console.log("chartData", chartData);
     console.log("maxPoints", maxPoints);
 
     var margin = {top: 120, right: 160, bottom: 120, left: 160};
 
-    var width = window.innerWidth * 0.8,
+    var width = window.innerWidth * 0.6,
       height = window.innerHeight * 0.5;
 
     d3.select('#vis-driver').select('svg').remove();
@@ -269,7 +260,7 @@
     // var parse = d3.time.format("%Y").parse;
 
     var x = d3.scaleBand()
-      .domain(addedYears)
+      .domain(chartYears)
       .range([0, width])
       .padding([0.2]);
 
@@ -320,19 +311,15 @@
         return x(d.data.year);
       })
       .attr("y", function (d) {
-        console.log("HERE 1: ", d);
         return y(d[1]);
       })
       .attr("height", function (d) {
-        console.log("HERE 2: ", d);
         return y(d[0]) - y(d[1]);
       })
       .attr("width", x.bandwidth())
       .attr("entity-type", "driver-year")
       .on("mouseover", handleMouseOverBubble)
-      .on("mouseout", handleMouseOutBubble)
-      .on("click", handleMouseClickBubble);
-    ;
+      .on("mouseout", handleMouseOutBubble);
 
     var legend = svg.selectAll(".legend")
       .data(colors)
@@ -378,7 +365,7 @@
       delete results.columns;
     }
     console.log("results", results);
-    document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='goToConstructorsPageFromDrivers()'>All Constructors</a> > Top " + selectedConstructor.name + " Drivers";
+    document.getElementById('page-2-title').innerHTML = "Top " + selectedConstructor.name + " Drivers";
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
@@ -692,8 +679,9 @@
     } else if (this.getAttribute("entity-type") == "driver-year") {
       document.getElementById('driver-year-detail').classList.toggle('closed');
       console.log("d", d);
+
       // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
-      // populateCurrentDriverYearDetailTable(selectedDriver);
+      populateCurrentDriverYearDetailTable(d);
     }
     d3.select(this).attr("r", d.radius * 1.2);
   }
@@ -710,7 +698,7 @@
     } else if (this.getAttribute("entity-type") == "driver-year") {
       document.getElementById('driver-year-detail').classList.toggle('closed');
       // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
-      // populateCurrentDriverYearDetailTable(selectedDriver);
+      clearCurrentDriverYearDetailTable();
     }
     d3.select(this).attr("r", d.radius);
   }
@@ -727,6 +715,18 @@
       document.getElementById('page-2').classList.toggle('closed');
       loadSingleDriverPage(selectedDriver, selectedConstructor);
     }
+  }
+
+  function populateCurrentDriverYearDetailTable(d) {
+    // document.getElementById('td-driver-year-constructor').innerHTML = data.
+    document.getElementById('td-driver-year-points').innerHTML = d[1] - d[0];
+    // document.getElementById('td-driver-year-wins').innerHTML = data.wins;
+  }
+
+  function clearCurrentDriverYearDetailTable() {
+    // document.getElementById('td-driver-year-constructor').innerHTML = data.
+    document.getElementById('td-driver-year-points').innerHTML = "";
+    // document.getElementById('td-driver-year-wins').innerHTML = data.wins;
   }
 
   function populateCurrentConstructorTable(selectedConstructor) {
