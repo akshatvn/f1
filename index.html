@@ -8,7 +8,7 @@
       background: lightgray;
     }
 
-    .viz {
+    .vis {
       top: 0;
       background: darkgray;
     }
@@ -31,7 +31,7 @@
       min-width: 220px;
     }
 
-    h1 {
+    h1, h2 {
       text-align: center;
       padding-top: 1%;
     }
@@ -60,10 +60,11 @@
   </style>
 </head>
 <body onload="loadConstructorsPage()">
-<h1 style="">Formula 1 World Championships (1950 - 2020)</h1>
+<h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page closed">
-  <div id='vis-all-constructors' class="viz">
-    <div id="bubble-detail">
+  <h2>Constructors</h2>
+  <div id='vis-all-constructors' class="vis">
+    <div id="constructor-detail">
       <table>
         <tr>
           <td>Constructor</td>
@@ -86,7 +87,30 @@
   </div>
 </div>
 <div id="page-2" class="page closed">
-  <div id='vis-constructor-drivers'></div>
+  <h2 id="page-2-title">Drivers</h2>
+  <button onclick="goToConstructorsPageFromDrivers()">Back to Constructors</button>
+  <div id='vis-constructor-drivers'>
+    <div id="driver-detail">
+      <table>
+        <tr>
+          <td>Driver</td>
+          <td id="td-driver-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-driver-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Races</td>
+          <td id="td-driver-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Wins</td>
+          <td id="td-driver-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
 </div>
 <div id="page-3" class="page closed">
   <div id='vis-driver'></div>
@@ -97,12 +121,13 @@
   var defaultBubbleColor = "#0074D9";
   var constructor_standings, constructors, races, contructor_wins, results;
   var constructor_arr = [];
+  var driver_arr = [];
   var selectedConstructor = null;
   var selectedDriver = null;
   var drivers = null;
 
-  async function loadDriversPage() {
-    document.getElementById('page-2').classList.toggle('closed');
+  async function loadDriversPage(selectedConstructor) {
+
     if (!drivers) {
       drivers = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/drivers.csv");
       delete drivers.columns;
@@ -114,8 +139,66 @@
       delete results.columns;
     }
     console.log("results", results);
-    
+    document.getElementById('page-2-title').innerHTML = selectedConstructor.name + " Drivers";
+    let usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);
+    console.log("usefulResults", usefulResults);
 
+    let usefulDrivers = [];
+    let addedDriverIds = [];
+    for (var i = 0; i < usefulResults.length; i++) {
+      result = usefulResults[i];
+
+      if (addedDriverIds.indexOf(result.driverId) === -1) {
+        let driver = drivers.find(d => d.driverId == result.driverId);
+        if (driver) {
+          addedDriverIds.push(result.driverId);
+          usefulDrivers.push(driver);
+        }
+        driver = null
+      }
+    }
+    console.log("usefulDrivers", usefulDrivers);
+    var driverWins = {};
+    for (i = 0; i < usefulResults.length; i++) {
+      let record = usefulResults[i];
+      if (!driverWins[record.driverId]) {
+        let currentDriver = drivers.find(d => d.driverId == record.driverId)
+        driverWins[record.driverId] = {
+          id: record.driverId,
+          entityId: record.driverId,
+          entityType: "driver",
+          forename: currentDriver.forename,
+          surname: currentDriver.surname,
+          name: currentDriver.surname,
+          wins: 0,
+          races: 0,
+          nationality: currentDriver.nationality,
+          color: null,
+        }
+      }
+      if (record.position === "1") {
+        driverWins[record.driverId].wins += 1;
+        driverWins[record.driverId].bubbleRadius = driverWins[record.driverId].wins;
+      }
+      driverWins[record.driverId].races += 1;
+
+    }
+    console.log("driverWins", driverWins);
+
+    for (const driverId in driverWins) {
+      driver_arr.push(driverWins[driverId])
+    }
+    driver_arr = driver_arr.sort((a, b) => a.wins < b.wins ? 1 : -1);
+    console.log("driver_arr: ", driver_arr);
+
+    display(driver_arr, '#vis-constructor-drivers');
+    document.getElementById('page-2').classList.toggle('closed');
+
+  }
+
+  function goToConstructorsPageFromDrivers() {
+    document.getElementById('page-2').classList.toggle('closed');
+    document.getElementById('page-1').classList.toggle('closed');
   }
 
   async function loadConstructorsPage() {
@@ -139,18 +222,23 @@
         let currentConstructor = constructors.find(c => c.constructorId == record.constructorId)
         contructor_wins[record.constructorId] = {
           id: record.constructorId,
+          entityId: record.constructorId,
+          entityType: "constructor",
           name: (currentConstructor).name,
           wins: 0,
           races: 0,
           nationality: currentConstructor.nationality,
           color: (currentConstructor).color,
-          driver_ids: []
+          driver_ids: [],
+          bubbleRadius: 0
         }
       }
       if (record.position === "1") {
         contructor_wins[record.constructorId].wins += 1;
+
       }
       contructor_wins[record.constructorId].races += 1;
+      contructor_wins[record.constructorId].bubbleRadius = contructor_wins[record.constructorId].wins;
     }
 
     console.log("contructor_wins: ", contructor_wins);
@@ -160,20 +248,24 @@
     constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
     console.log("constructor_arr: ", constructor_arr);
 
-    display(constructor_arr);
+    display(constructor_arr, '#vis-all-constructors');
     document.getElementById('page-1').classList.toggle('closed');
   }
 
-  function bubbleChart() {
+  function bubbleChart(data) {
     const width = window.innerWidth * 0.8;
-    const height = window.innerHeight;
+    const height = window.innerHeight * 0.8;
 
 
-    // location to centre the bubbles
-    const centre = {x: width / 2, y: height / 2};
+    // location to center the bubbles
+    const center = {x: width / 2, y: height / 2};
 
     // strength to apply to the position forces
-    const forceStrength = 0.02;
+    const biggestBubble = data.reduce(function(prev, current) {
+      return (prev.wins > current.wins) ? prev : current
+    });
+    const forceStrength = 10.0/biggestBubble.wins;
+    console.log("forceStrength", forceStrength);
 
     // these will be set in createNodes and chart functions
     let svg = null;
@@ -181,31 +273,21 @@
     let labels = null;
     let nodes = [];
 
-    // charge is dependent on size of the bubble, so bigger towards the middle
-    function charge(d) {
-      return Math.pow(d.radius, 2.0) * 0.05
-    }
+    // // charge is dependent on size of the bubble, so bigger towards the middle
+    // function charge(d) {
+    //   return
+    // }
 
     // create a force simulation and add forces to it
     const simulation = d3.forceSimulation()
-      .force('charge', d3.forceManyBody().strength(charge))
-      // .force('center', d3.forceCenter(centre.x, centre.y))
-      .force('x', d3.forceX().strength(forceStrength).x(centre.x))
-      .force('y', d3.forceY().strength(forceStrength).y(centre.y))
+      .force('charge', d3.forceManyBody().strength(d => Math.pow(d.radius, 2.0) * 0.04))
+      .force('center', d3.forceCenter(center.x, center.y))
+      .force('x', d3.forceX().strength(forceStrength).x(center.x))
+      .force('y', d3.forceY().strength(forceStrength).y(center.y))
       .force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
 
-    // force simulation starts up automatically, which we don't want as there aren't any nodes yet
-    simulation.stop();
 
-    // set up colour scale
-    // const fillColour = d3.scaleOrdinal()
-    //   .domain(["1", "2", "3", "5", "300"])
-    //   .range(["#0074D9", "#7FDBFF", "#39CCCC", "#3D9970", "#AAAAAA"]);
 
-    // data manipulation function takes raw data from csv and converts it into an array of node objects
-    // each node will store data and visualisation values to draw a bubble
-    // rawData is expected to be an array of data objects, read in d3.csv
-    // function returns the new node array, with a node for each element in the rawData input
     function createNodes(rawData) {
       // use max size in the data as the max in the scale's domain
       // note we have to ensure that size is a number
@@ -214,7 +296,7 @@
       // size bubbles based on area
       const radiusScale = d3.scaleSqrt()
         .domain([0, maxSize])
-        .range([0, height / 12])
+        .range([0, height / 12]);
 
       // use map() to convert raw data into node data
       const myNodes = rawData.map(d => ({
@@ -251,16 +333,17 @@
         .append('circle')
         .classed('bubble', true)
         .attr('r', d => d.radius)
-        .attr('constructor-id', d => d.id)
+        .attr('entity-id', d => d.entityId)
+        .attr('entity-type', d => d.entityType)
         .attr('fill', function (d) {
-          if (d.color != "") {
+          if (!!d.color && d.color != "") {
             return d.color;
           }
           return defaultBubbleColor;
         })
-        .on("mouseover", handleMouseOverConstructor)
-        .on("mouseout", handleMouseOutConstructor)
-        .on("click", handleMouseClickOnConstructor);
+        .on("mouseover", handleMouseOverBubble)
+        .on("mouseout", handleMouseOutBubble)
+        .on("click", handleMouseClickBubble);
 
       // labels
       labels = elements
@@ -300,13 +383,15 @@
     return chart;
   }
 
-  let myBubbleChart = bubbleChart();
-
-  function display(data) {
-    myBubbleChart('#vis-all-constructors', data);
+  function display(data, visId) {
+    let myBubbleChart = bubbleChart(data);
+    myBubbleChart(visId, data);
   }
 
   function invertColor(hex) {
+    if (!hex) {
+      hex = defaultBubbleColor;
+    }
     if (hex.indexOf('#') === 0) {
       hex = hex.slice(1);
     }
@@ -332,27 +417,34 @@
   }
 
   // Create Event Handlers for mouse
-  function handleMouseOverConstructor(d, i) {  // Add interactivity
-
-    // Use D3 to select element, change color and size
-    selectedConstructor = constructor_arr.find(c => c.id == d.id);
-    populateCurrentConstructorTable(selectedConstructor);
+  function handleMouseOverBubble(d, i) {  // Add interactivity
+    if (this.getAttribute("entity-type") == "constructor") {
+      selectedConstructor = constructor_arr.find(c => c.id == d.id);
+      populateCurrentConstructorTable(selectedConstructor);
+    } else if (this.getAttribute("entity-type") == "driver") {
+      selectedDriver = driver_arr.find(c => c.id == d.id);
+      populateCurrentDriverTable(selectedDriver);
+    }
     d3.select(this).attr("r", d.radius * 1.2);
   }
 
-  function handleMouseOutConstructor(d, i) {
-    selectedConstructor = null;
-    clearCurrentConstructorTable();
+  function handleMouseOutBubble(d, i) {
+    if (this.getAttribute("entity-type") == "constructor") {
+      selectedConstructor = null;
+      clearCurrentConstructorTable();
+    }  else if (this.getAttribute("entity-type") == "driver") {
+      selectedDriver = null;
+      clearCurrentDriverTable();
+    }
     // Use D3 to select element, change color back to normal
     d3.select(this).attr("r", d.radius);
   }
 
-  function handleMouseClickOnConstructor(d, i) {
+  function handleMouseClickBubble(d, i) {
     selectedConstructor = constructor_arr.find(c => c.id == d.id);
     console.log("selected constructor", selectedConstructor);
     document.getElementById('page-1').classList.toggle('closed');
-    loadDriversPage();
-
+    loadDriversPage(selectedConstructor);
   }
 
 
@@ -375,6 +467,22 @@
     document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
     document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
   }
+
+  function populateCurrentDriverTable(selectedDriver) {
+    document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
+    document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
+    document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
+    document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
+  }
+
+
+  function clearCurrentDriverTable() {
+    document.getElementById("td-driver-name").innerHTML = '';
+    document.getElementById("td-driver-nationality").innerHTML = '';
+    document.getElementById("td-driver-races").innerHTML = '';
+    document.getElementById("td-driver-wins").innerHTML = '';
+  }
+
 
   function clearCurrentConstructorTable() {
     document.getElementById("td-constructor-name").innerHTML = '';
