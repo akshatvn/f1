@@ -136,12 +136,30 @@
         </tr>
       </table>
     </div>
+    <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
   </div>
 </div>
 <div id="page-3" class="page closed">
   <h2 id="page-3-title">Driver History</h2>
-  <a class='nav' id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">❮ Back to Constructor</a>
-  <div id='vis-driver'></div>
+  <div class="float-container">
+    <a class='nav' id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">❮ Back to Constructor</a>
+    <div id='vis-driver'></div>
+    <div id="driver-year-detail" class="float-child custom-tooltip closed">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-driver-year-constructor" class="data"></td>
+        <tr>
+          <td>Points</td>
+          <td id="td-driver-year-points" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-driver-year-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
 </div>
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
@@ -212,6 +230,8 @@
         addedYears.push(race.year)
       }
     }
+
+    console.log("groupedData", groupedData);
 
     for (const k in groupedData) {
       chartData.push(groupedData[k])
@@ -289,7 +309,7 @@
       .data(stackedData)
       .enter().append("g")
       .attr("fill", function (d) {
-        return color(d.key).length == 0 ? "BLUE" : color(d.key);
+        return color(d.key).length == 0 ? defaultBubbleColor : color(d.key);
       })
       .selectAll("rect")
       .data(function (d) {
@@ -300,25 +320,19 @@
         return x(d.data.year);
       })
       .attr("y", function (d) {
+        console.log("HERE 1: ", d);
         return y(d[1]);
       })
       .attr("height", function (d) {
+        console.log("HERE 2: ", d);
         return y(d[0]) - y(d[1]);
       })
       .attr("width", x.bandwidth())
-      .on("mouseover", function () {
-        tooltip.style("display", null);
-      })
-      .on("mouseout", function () {
-        tooltip.style("display", "none");
-      })
-      .on("mousemove", function (d) {
-        var xPosition = d3.mouse(this)[0] - 15;
-        var yPosition = d3.mouse(this)[1] - 25;
-        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
-        console.log("d", d);
-        tooltip.select("text").text(d.data.totalPoints);
-      });
+      .attr("entity-type", "driver-year")
+      .on("mouseover", handleMouseOverBubble)
+      .on("mouseout", handleMouseOutBubble)
+      .on("click", handleMouseClickBubble);
+    ;
 
     var legend = svg.selectAll(".legend")
       .data(colors)
@@ -346,22 +360,6 @@
         return colorMap[d].join();
       });
 
-    var tooltip = svg.append("g")
-      .attr("class", "tooltip")
-      .style("display", "none");
-
-    tooltip.append("rect")
-      .attr("width", 30)
-      .attr("height", 20)
-      .attr("fill", "white");
-
-
-    tooltip.append("text")
-      .attr("x", 15)
-      .attr("dy", "1.2em")
-      .style("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("font-weight", "bold");
 
     document.getElementById('page-3').classList.toggle('closed');
   }
@@ -512,7 +510,7 @@
 
   function bubbleChart(data, ignoreZeros = false) {
     const width = window.innerWidth * 0.8;
-    const height = window.innerHeight * 0.6;
+    const height = window.innerHeight * 0.8;
 
     const center = {x: width / 2, y: height / 2};
     let forceStrength = 0.04;
@@ -691,6 +689,11 @@
       document.getElementById('driver-detail').classList.toggle('closed');
       selectedDriver = driver_arr.find(c => c.id == d.id);
       populateCurrentDriverTable(selectedDriver);
+    } else if (this.getAttribute("entity-type") == "driver-year") {
+      document.getElementById('driver-year-detail').classList.toggle('closed');
+      console.log("d", d);
+      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
+      // populateCurrentDriverYearDetailTable(selectedDriver);
     }
     d3.select(this).attr("r", d.radius * 1.2);
   }
@@ -704,6 +707,10 @@
       document.getElementById('driver-detail').classList.toggle('closed');
       selectedDriver = null;
       clearCurrentDriverTable();
+    } else if (this.getAttribute("entity-type") == "driver-year") {
+      document.getElementById('driver-year-detail').classList.toggle('closed');
+      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
+      // populateCurrentDriverYearDetailTable(selectedDriver);
     }
     d3.select(this).attr("r", d.radius);
   }
