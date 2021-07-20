@@ -105,7 +105,7 @@
           <td id="td-driver-races" class="data"></td>
         </tr>
         <tr>
-          <td>Wins</td>
+          <td id="wins-for-con">Wins</td>
           <td id="td-driver-wins" class="data"></td>
         </tr>
       </table>
@@ -127,7 +127,7 @@
   var drivers = null;
 
   async function loadDriversPage(selectedConstructor) {
-
+    driver_arr = [];
     if (!drivers) {
       drivers = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/drivers.csv");
       delete drivers.columns;
@@ -140,6 +140,9 @@
     }
     console.log("results", results);
     document.getElementById('page-2-title').innerHTML = selectedConstructor.name + " Drivers";
+    document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
+    // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
+
     let usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);
     console.log("usefulResults", usefulResults);
 
@@ -197,7 +200,9 @@
   }
 
   function goToConstructorsPageFromDrivers() {
+    display([], '#vis-constructor-drivers');
     document.getElementById('page-2').classList.toggle('closed');
+    display(constructor_arr, '#vis-all-constructors');
     document.getElementById('page-1').classList.toggle('closed');
   }
 
@@ -259,12 +264,22 @@
 
     // location to center the bubbles
     const center = {x: width / 2, y: height / 2};
-
+    let forceStrength;
     // strength to apply to the position forces
-    const biggestBubble = data.reduce(function(prev, current) {
-      return (prev.wins > current.wins) ? prev : current
-    });
-    const forceStrength = 10.0/biggestBubble.wins;
+    if (data.length > 0) {
+      const biggestBubble = data.reduce(function (prev, current) {
+        return (prev.wins > current.wins) ? prev : current
+      });
+      if (biggestBubble.wins > 0) {
+        forceStrength = 10.0 / biggestBubble.wins;
+      } else {
+        forceStrength = 0.05;
+      }
+    } else {
+      forceStrength = 0.05;
+    }
+
+
     console.log("forceStrength", forceStrength);
 
     // these will be set in createNodes and chart functions
@@ -285,7 +300,6 @@
       .force('x', d3.forceX().strength(forceStrength).x(center.x))
       .force('y', d3.forceY().strength(forceStrength).y(center.y))
       .force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
-
 
 
     function createNodes(rawData) {
@@ -315,6 +329,10 @@
     let chart = function chart(selector, rawData) {
       // convert raw data into nodes data
       nodes = createNodes(rawData);
+
+      d3.select(selector).
+        select('svg').
+        remove();
 
       // create svg element inside provided selector
       svg = d3.select(selector)
@@ -432,7 +450,7 @@
     if (this.getAttribute("entity-type") == "constructor") {
       selectedConstructor = null;
       clearCurrentConstructorTable();
-    }  else if (this.getAttribute("entity-type") == "driver") {
+    } else if (this.getAttribute("entity-type") == "driver") {
       selectedDriver = null;
       clearCurrentDriverTable();
     }
