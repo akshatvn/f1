@@ -54,7 +54,7 @@
       transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
     }
 
-    .page.closed {
+    .closed {
       max-height: 0;
     }
 
@@ -69,14 +69,27 @@
       background-color: #04AA6D;
       color: #ffffff;
     }
+
+    .float-container .custom-tooltip {
+      display: none;
+      background: white;
+    }
+
+    .float-container:hover .custom-tooltip {
+      display: block;
+      position: fixed;
+      overflow: hidden;
+    }
+
   </style>
 </head>
 <body onload="loadConstructorsPage()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page closed">
   <h2>Constructors By Race Victories</h2>
-  <div id='vis-all-constructors' class="vis">
-    <div id="constructor-detail">
+  <div class="float-container">
+    <div id='vis-all-constructors' class="vis float-child"></div>
+    <div id="constructor-detail" class="float-child custom-tooltip closed">
       <table>
         <tr>
           <td>Constructor</td>
@@ -100,9 +113,10 @@
 </div>
 <div id="page-2" class="page closed">
   <h2 id="page-2-title">Drivers</h2>
-  <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
-  <div id='vis-constructor-drivers'>
-    <div id="driver-detail">
+  <div class="float-container">
+    <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
+    <div id='vis-constructor-drivers' class="vis float-child"></div>
+    <div id="driver-detail" class="float-child custom-tooltip closed">
       <table>
         <tr>
           <td>Driver</td>
@@ -142,6 +156,20 @@
   var windowConstructor = null;
   var selectedDriver = null;
   var drivers = null;
+
+
+  var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+
+  window.onmousemove = function (e) {
+    var x = (e.clientX + 20) + 'px',
+      y = (e.clientY + 20) + 'px';
+    for (var i = 0; i < tooltips.length; i++) {
+      tooltips[i].style.top = y;
+      tooltips[i].style.left = x;
+      // tooltips[i].style.top = 100;
+      // tooltips[i].style.left = 100;
+    }
+  };
 
 
   async function loadSingleDriverPage(selectedDriver) {
@@ -342,7 +370,7 @@
     windowConstructor = selectedConstructor;
     driver_arr = [];
     if (!drivers) {
-      drivers = await d3.csv(csv_root + "/data/drivers.csv" )
+      drivers = await d3.csv(csv_root + "/data/drivers.csv")
       delete drivers.columns;
     }
     console.log("drivers", drivers);
@@ -484,7 +512,7 @@
 
   function bubbleChart(data, ignoreZeros = false) {
     const width = window.innerWidth * 0.8;
-    const height = window.innerHeight * 0.8;
+    const height = window.innerHeight * 0.6;
 
     const center = {x: width / 2, y: height / 2};
     let forceStrength = 0.04;
@@ -656,9 +684,11 @@
   // Create Event Handlers for mouse
   function handleMouseOverBubble(d, i) {  // Add interactivity
     if (this.getAttribute("entity-type") == "constructor") {
+      document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = constructor_arr.find(c => c.id == d.id);
       populateCurrentConstructorTable(selectedConstructor);
     } else if (this.getAttribute("entity-type") == "driver") {
+      document.getElementById('driver-detail').classList.toggle('closed');
       selectedDriver = driver_arr.find(c => c.id == d.id);
       populateCurrentDriverTable(selectedDriver);
     }
@@ -667,9 +697,11 @@
 
   function handleMouseOutBubble(d, i) {
     if (this.getAttribute("entity-type") == "constructor") {
+      document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = null;
       clearCurrentConstructorTable();
     } else if (this.getAttribute("entity-type") == "driver") {
+      document.getElementById('driver-detail').classList.toggle('closed');
       selectedDriver = null;
       clearCurrentDriverTable();
     }
