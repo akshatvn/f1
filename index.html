@@ -132,6 +132,8 @@
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <script>
+  // var csv_root = "/Users/akshat/Fraternity/UIUC-MCS/CS416-Data-viz/narrative_viz/f1";
+  var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
   var defaultBubbleColor = "#0074D9";
   var constructors, races, contructor_wins, results;
   var constructor_arr = [];
@@ -340,13 +342,13 @@
     windowConstructor = selectedConstructor;
     driver_arr = [];
     if (!drivers) {
-      drivers = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/drivers.csv");
+      drivers = await d3.csv(csv_root + "/data/drivers.csv" )
       delete drivers.columns;
     }
     console.log("drivers", drivers);
 
     if (!results) {
-      results = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/results.csv");
+      results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
     console.log("results", results);
@@ -425,18 +427,18 @@
   async function loadConstructorsPage() {
 
     if (!constructors) {
-      constructors = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructors.csv");
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
       delete constructors.columns;
     }
 
     if (!races) {
-      races = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/races.csv");
+      races = await d3.csv(csv_root + "/data/races.csv");
       delete races.columns;
     }
 
 
     if (!results) {
-      results = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/results.csv");
+      results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
 
