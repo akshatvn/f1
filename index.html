@@ -192,7 +192,7 @@
       for (const k in row) {
         if (k != 'year' && k != 'totalPoints') {
           chartData[i]['totalPoints'] = (chartData[i]['totalPoints'] || 0) + row[k];
-          if (maxPoints < chartData[i]['totalPoints'] ) {
+          if (maxPoints < chartData[i]['totalPoints']) {
             maxPoints = chartData[i]['totalPoints'];
           }
         }
@@ -233,6 +233,43 @@
 
     svg.append("g")
       .call(d3.axisLeft(y));
+
+    // console.log("allConstructors", allConstructors);
+    const colorMap = allConstructors.map((c) => {
+      return constructors.find(d => d.constructorId == c).color
+    });
+
+    console.log("colorMap", colorMap);
+    var color = d3.scaleOrdinal()
+      .domain(allConstructors)
+      .range(colorMap);
+
+    var stackedData = d3.stack()
+      .keys(allConstructors)
+      (chartData);
+
+    svg.append("g")
+      .selectAll("g")
+      .data(stackedData)
+      .enter().append("g")
+      .attr("fill", function (d) {
+        return color(d.key).length ==0 ? "BLUE" : color(d.key);
+      })
+      .selectAll("rect")
+      .data(function (d) {
+        return d;
+      })
+      .enter().append("rect")
+      .attr("x", function (d) {
+        return x(d.data.year);
+      })
+      .attr("y", function (d) {
+        return y(d[1]);
+      })
+      .attr("height", function (d) {
+        return y(d[0]) - y(d[1]);
+      })
+      .attr("width", x.bandwidth());
 
     document.getElementById('page-3').classList.toggle('closed');
   }
