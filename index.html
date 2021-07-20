@@ -387,7 +387,7 @@
           wins: 0,
           races: 0,
           nationality: currentDriver.nationality,
-          color: null,
+          color: windowConstructor.color,
         }
       }
       if (record.position === "1") {
@@ -488,14 +488,15 @@
     let forceStrength = 0.04;
 
 
-    if (data.length > 0) {
-      const biggestBubble = data.reduce(function (prev, current) {
-        return (prev.wins > current.wins) ? prev : current
-      });
-      if (biggestBubble.wins > 0) {
-        forceStrength = 0.04 * (data.length / biggestBubble.wins);
-      }
-    }
+    // if (data.length > 0) {
+    //   const biggestBubble = data.reduce(function (prev, current) {
+    //     return (prev.wins > current.wins) ? prev : current
+    //   });
+    //   if (biggestBubble.wins > 0) {
+    //     forceStrength = 0.04 * (data.length / biggestBubble.wins)
+    //
+    //   }
+    // }
 
     console.log("forceStrength", forceStrength);
 
