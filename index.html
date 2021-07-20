@@ -1,21 +1,22 @@
 <head>
+
+
   <style>
     body {
       font-family: "avenir next", Arial, sans-serif;
-      font-size: 12px;
       margin: 0;
       background: lightgray;
     }
 
-    #vis {
-      position: absolute;
+    .viz {
       top: 0;
+      background: darkgray;
     }
 
     table {
-      position: absolute;
-      top: 10%;
-      right: 1%;
+      /*position: absolute;*/
+      /*top: 10%;*/
+      /*right: 35%;*/
     }
 
     td {
@@ -29,51 +30,108 @@
     td.data {
       min-width: 220px;
     }
+
+    h1 {
+      text-align: center;
+      padding-top: 1%;
+    }
+
+    svg {
+      margin: auto;
+      display: block;
+    }
+
+    .bubble {
+      cursor: pointer;
+    }
+
+    .page {
+      overflow-y: hidden;
+      /*max-height: 500px; !* approximate max height *!*/
+
+      transition-property: all;
+      transition-duration: .5s;
+      transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
+    }
+
+    .page.closed {
+      max-height: 0;
+    }
   </style>
 </head>
-<body onload="init()">
-<h1>F1 Grand Prix Wins</h1>
-<div id='vis'></div>
-<table>
-  <tr>
-    <td>Constructor</td>
-    <td id="td-constructor-name" class="data"></td>
-  </tr>
-  <tr>
-    <td>Nationality</td>
-    <td id="td-constructor-nationality" class="data"></td>
-  </tr>
-
-  <tr>
-    <td>Races</td>
-    <td id="td-constructor-races" class="data"></td>
-  </tr>
-  <tr>
-    <td>Wins</td>
-    <td id="td-constructor-wins" class="data"></td>
-  </tr>
-
-</table>
+<body onload="loadConstructorsPage()">
+<h1 style="">Formula 1 World Championships (1950 - 2020)</h1>
+<div id="page-1" class="page closed">
+  <div id='vis-all-constructors' class="viz">
+    <div id="bubble-detail">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-constructor-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-constructor-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Races</td>
+          <td id="td-constructor-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Wins</td>
+          <td id="td-constructor-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+<div id="page-2" class="page closed">
+  <div id='vis-constructor-drivers'></div>
+</div>
+<div id="page-3" class="page closed">
+  <div id='vis-driver'></div>
+</div>
 </body>
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <script>
   var defaultBubbleColor = "#0074D9";
-  var constructor_standings, constructors, races, contructor_wins;
+  var constructor_standings, constructors, races, contructor_wins, results;
   var constructor_arr = [];
   var selectedConstructor = null;
+  var selectedDriver = null;
+  var drivers = null;
 
-  async function init() {
+  async function loadDriversPage() {
+    document.getElementById('page-2').classList.toggle('closed');
+    if (!drivers) {
+      drivers = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/drivers.csv");
+      delete drivers.columns;
+    }
+    console.log("drivers", drivers);
+
+    if (!results) {
+      results = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/results.csv");
+      delete results.columns;
+    }
+    console.log("results", results);
+    
+
+  }
+
+  async function loadConstructorsPage() {
 
     constructor_standings = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructor_standings.csv");
     constructors = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructors.csv");
     races = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/races.csv");
-    console.log("constructors", constructors);
+
+
+    // console.log("constructors", constructors);
 
     delete constructor_standings.columns;
     delete constructors.columns;
     delete races.columns;
 
-    console.log("constructors", constructors);
+
     contructor_wins = {};
     for (i = 0; i < constructor_standings.length; i++) {
       let record = constructor_standings[i];
@@ -85,7 +143,8 @@
           wins: 0,
           races: 0,
           nationality: currentConstructor.nationality,
-          color: (currentConstructor).color
+          color: (currentConstructor).color,
+          driver_ids: []
         }
       }
       if (record.position === "1") {
@@ -101,12 +160,12 @@
     constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
     console.log("constructor_arr: ", constructor_arr);
 
-    display(constructor_arr)
-
+    display(constructor_arr);
+    document.getElementById('page-1').classList.toggle('closed');
   }
 
   function bubbleChart() {
-    const width = window.innerWidth;
+    const width = window.innerWidth * 0.8;
     const height = window.innerHeight;
 
 
@@ -133,15 +192,15 @@
       // .force('center', d3.forceCenter(centre.x, centre.y))
       .force('x', d3.forceX().strength(forceStrength).x(centre.x))
       .force('y', d3.forceY().strength(forceStrength).y(centre.y))
-      .force('collision', d3.forceCollide().radius(d => d.radius + 2));
+      .force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
 
     // force simulation starts up automatically, which we don't want as there aren't any nodes yet
     simulation.stop();
 
     // set up colour scale
-    const fillColour = d3.scaleOrdinal()
-      .domain(["1", "2", "3", "5", "300"])
-      .range(["#0074D9", "#7FDBFF", "#39CCCC", "#3D9970", "#AAAAAA"]);
+    // const fillColour = d3.scaleOrdinal()
+    //   .domain(["1", "2", "3", "5", "300"])
+    //   .range(["#0074D9", "#7FDBFF", "#39CCCC", "#3D9970", "#AAAAAA"]);
 
     // data manipulation function takes raw data from csv and converts it into an array of node objects
     // each node will store data and visualisation values to draw a bubble
@@ -161,10 +220,10 @@
       const myNodes = rawData.map(d => ({
         ...d,
         radius: radiusScale(4 + (+d.wins) * 5),
-        size: +d.size,
-        x: Math.random() * 900,
-        y: Math.random() * 800
-      }))
+        // size: +d.wins,
+        x: (Math.random() - 0.5) * width,
+        y: (Math.random() - 0.5) * height
+      }));
 
       return myNodes;
     }
@@ -199,8 +258,9 @@
           }
           return defaultBubbleColor;
         })
-        .on("mouseover", handleMouseOverBubble)
-        .on("mouseout", handleMouseOutBubble);
+        .on("mouseover", handleMouseOverConstructor)
+        .on("mouseout", handleMouseOutConstructor)
+        .on("click", handleMouseClickOnConstructor);
 
       // labels
       labels = elements
@@ -211,8 +271,8 @@
         .attr('id', d => "bubble-label-" + d.id)
         .style('text-anchor', 'middle')
         .style('font-size', 12)
-        .style('color', d => invertColor(d.color))
-        .text(d => d.wins > 0 ? d.name + ": " + d.wins : "")
+        .style('fill', d => invertColor(d.color))
+        .text(d => d.wins > 45 ? d.name + ": " + d.wins : "")
         .on("mouseover", handleMouseOverText)
         .on("mouseout", handleMouseOutText);
 
@@ -243,7 +303,7 @@
   let myBubbleChart = bubbleChart();
 
   function display(data) {
-    myBubbleChart('#vis', data);
+    myBubbleChart('#vis-all-constructors', data);
   }
 
   function invertColor(hex) {
@@ -272,14 +332,42 @@
   }
 
   // Create Event Handlers for mouse
-  function handleMouseOverBubble(d, i) {  // Add interactivity
+  function handleMouseOverConstructor(d, i) {  // Add interactivity
 
     // Use D3 to select element, change color and size
     selectedConstructor = constructor_arr.find(c => c.id == d.id);
     populateCurrentConstructorTable(selectedConstructor);
-    console.log("selected constructor data: ", selectedConstructor);
     d3.select(this).attr("r", d.radius * 1.2);
   }
+
+  function handleMouseOutConstructor(d, i) {
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
+    // Use D3 to select element, change color back to normal
+    d3.select(this).attr("r", d.radius);
+  }
+
+  function handleMouseClickOnConstructor(d, i) {
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    console.log("selected constructor", selectedConstructor);
+    document.getElementById('page-1').classList.toggle('closed');
+    loadDriversPage();
+
+  }
+
+
+  // Create Event Handlers for mouse
+  function handleMouseOverText(d, i) {  // Add interactivity
+
+    // Use D3 to select element, change color and size
+    d3.select(this).attr("r", d.radius * 1.2);
+  }
+
+  function handleMouseOutText(d, i) {
+    // Use D3 to select element, change color back to normal
+    d3.select(this).attr("r", d.radius);
+  }
+
 
   function populateCurrentConstructorTable(selectedConstructor) {
     document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
@@ -295,29 +383,9 @@
     document.getElementById("td-constructor-wins").innerHTML = '';
   }
 
-  function handleMouseOutBubble(d, i) {
-    selectedConstructor = null;
-    clearCurrentConstructorTable();
-    // Use D3 to select element, change color back to normal
-    d3.select(this).attr("r", d.radius);
-
-
-  }
-
-  // Create Event Handlers for mouse
-  function handleMouseOverText(d, i) {  // Add interactivity
-
-    // Use D3 to select element, change color and size
-    d3.select(this).attr("r", d.radius * 1.2);
-  }
-
-  function handleMouseOutText(d, i) {
-    // Use D3 to select element, change color back to normal
-    d3.select(this).attr("r", d.radius);
-
-    // Select text by id and then remove
-    d3.select("#t" + d.x + "-" + d.y + "-" + i).remove();  // Remove text location
-  }
-
 
 </script>
+<script>
+
+</script>
+
