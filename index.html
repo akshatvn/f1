@@ -62,7 +62,7 @@
 <body onload="loadConstructorsPage()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page closed">
-  <h2>Constructors</h2>
+  <h2>Constructors By Race Victories</h2>
   <div id='vis-all-constructors' class="vis">
     <div id="constructor-detail">
       <table>
@@ -88,7 +88,7 @@
 </div>
 <div id="page-2" class="page closed">
   <h2 id="page-2-title">Drivers</h2>
-  <button onclick="goToConstructorsPageFromDrivers()">Back to Constructors</button>
+  <button onclick="goToConstructorsPageFromDrivers()">< Back to Constructors</button>
   <div id='vis-constructor-drivers'>
     <div id="driver-detail">
       <table>
@@ -139,7 +139,7 @@
       delete results.columns;
     }
     console.log("results", results);
-    document.getElementById('page-2-title').innerHTML = selectedConstructor.name + " Drivers";
+    document.getElementById('page-2-title').innerHTML = "Top " + selectedConstructor.name + " Drivers";
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
@@ -194,13 +194,12 @@
     driver_arr = driver_arr.sort((a, b) => a.wins < b.wins ? 1 : -1);
     console.log("driver_arr: ", driver_arr);
 
-    display(driver_arr, '#vis-constructor-drivers');
+    display(driver_arr, '#vis-constructor-drivers', true);
     document.getElementById('page-2').classList.toggle('closed');
 
   }
 
   function goToConstructorsPageFromDrivers() {
-    display([], '#vis-constructor-drivers');
     document.getElementById('page-2').classList.toggle('closed');
     display(constructor_arr, '#vis-all-constructors');
     document.getElementById('page-1').classList.toggle('closed');
@@ -208,21 +207,28 @@
 
   async function loadConstructorsPage() {
 
-    constructor_standings = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructor_standings.csv");
-    constructors = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructors.csv");
-    races = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/races.csv");
+    if (!constructors) {
+      constructors = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/constructors.csv");
+      delete constructors.columns;
+    }
 
+    if (!races) {
+      races = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/races.csv");
+      delete races.columns;
+    }
+
+
+    if (!results) {
+      results = await d3.csv("https://raw.githubusercontent.com/akshatvn/f1/main/data/results.csv");
+      delete results.columns;
+    }
 
     // console.log("constructors", constructors);
 
-    delete constructor_standings.columns;
-    delete constructors.columns;
-    delete races.columns;
-
 
     contructor_wins = {};
-    for (i = 0; i < constructor_standings.length; i++) {
-      let record = constructor_standings[i];
+    for (i = 0; i < results.length; i++) {
+      let record = results[i];
       if (!contructor_wins[record.constructorId]) {
         let currentConstructor = constructors.find(c => c.constructorId == record.constructorId)
         contructor_wins[record.constructorId] = {
@@ -257,28 +263,22 @@
     document.getElementById('page-1').classList.toggle('closed');
   }
 
-  function bubbleChart(data) {
+  function bubbleChart(data, ignoreZeros = false) {
     const width = window.innerWidth * 0.8;
     const height = window.innerHeight * 0.8;
 
-
-    // location to center the bubbles
     const center = {x: width / 2, y: height / 2};
-    let forceStrength;
-    // strength to apply to the position forces
+    let forceStrength = 0.04;
+
+
     if (data.length > 0) {
       const biggestBubble = data.reduce(function (prev, current) {
         return (prev.wins > current.wins) ? prev : current
       });
       if (biggestBubble.wins > 0) {
-        forceStrength = 10.0 / biggestBubble.wins;
-      } else {
-        forceStrength = 0.05;
+        forceStrength = 0.04 * (data.length/biggestBubble.wins);
       }
-    } else {
-      forceStrength = 0.05;
     }
-
 
     console.log("forceStrength", forceStrength);
 
@@ -303,6 +303,10 @@
 
 
     function createNodes(rawData) {
+      if (ignoreZeros) {
+        rawData = rawData.filter(d => d.wins > 0);
+      }
+
       // use max size in the data as the max in the scale's domain
       // note we have to ensure that size is a number
       const maxSize = d3.max(rawData, d => 4 + (+d.wins) * 5);
@@ -330,9 +334,7 @@
       // convert raw data into nodes data
       nodes = createNodes(rawData);
 
-      d3.select(selector).
-        select('svg').
-        remove();
+      d3.select(selector).select('svg').remove();
 
       // create svg element inside provided selector
       svg = d3.select(selector)
@@ -373,9 +375,7 @@
         .style('text-anchor', 'middle')
         .style('font-size', 12)
         .style('fill', d => invertColor(d.color))
-        .text(d => d.wins > 45 ? d.name + ": " + d.wins : "")
-        .on("mouseover", handleMouseOverText)
-        .on("mouseout", handleMouseOutText);
+        .text(d => d.wins > 45 ? d.name + ": " + d.wins : "");
 
       // set simulation's nodes to our newly created nodes array
       // simulation starts running automatically once nodes are set
@@ -401,38 +401,37 @@
     return chart;
   }
 
-  function display(data, visId) {
-    let myBubbleChart = bubbleChart(data);
-    myBubbleChart(visId, data);
+  function display(data, visId, ignoreZeros = true) {
+    let myBubbleChart = bubbleChart(data, ignoreZeros);
+    myBubbleChart(visId, data, ignoreZeros);
   }
 
+  // function to find color of font to be written on top of bubble (for contrast)
   function invertColor(hex) {
+    function padZero(str, len) {
+      len = len || 2;
+      var zeros = new Array(len).join('0');
+      return (zeros + str).slice(-len);
+    }
+
     if (!hex) {
       hex = defaultBubbleColor;
     }
     if (hex.indexOf('#') === 0) {
       hex = hex.slice(1);
     }
-    // convert 3-digit hex to 6-digits.
     if (hex.length === 3) {
       hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
     if (hex.length !== 6) {
       hex = defaultBubbleColor;
     }
-    // invert color components
     var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
       g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
       b = (255 - parseInt(hex.slice(4, 6), 16)).toString(16);
-    // pad each with zeros and return
     return '#' + padZero(r) + padZero(g) + padZero(b);
   }
 
-  function padZero(str, len) {
-    len = len || 2;
-    var zeros = new Array(len).join('0');
-    return (zeros + str).slice(-len);
-  }
 
   // Create Event Handlers for mouse
   function handleMouseOverBubble(d, i) {  // Add interactivity
@@ -454,30 +453,17 @@
       selectedDriver = null;
       clearCurrentDriverTable();
     }
-    // Use D3 to select element, change color back to normal
     d3.select(this).attr("r", d.radius);
   }
 
   function handleMouseClickBubble(d, i) {
-    selectedConstructor = constructor_arr.find(c => c.id == d.id);
-    console.log("selected constructor", selectedConstructor);
-    document.getElementById('page-1').classList.toggle('closed');
-    loadDriversPage(selectedConstructor);
+    if (this.getAttribute("entity-type") == "constructor") {
+      selectedConstructor = constructor_arr.find(c => c.id == d.id);
+      console.log("selected constructor", selectedConstructor);
+      document.getElementById('page-1').classList.toggle('closed');
+      loadDriversPage(selectedConstructor);
+    }
   }
-
-
-  // Create Event Handlers for mouse
-  function handleMouseOverText(d, i) {  // Add interactivity
-
-    // Use D3 to select element, change color and size
-    d3.select(this).attr("r", d.radius * 1.2);
-  }
-
-  function handleMouseOutText(d, i) {
-    // Use D3 to select element, change color back to normal
-    d3.select(this).attr("r", d.radius);
-  }
-
 
   function populateCurrentConstructorTable(selectedConstructor) {
     document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
@@ -493,14 +479,12 @@
     document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
   }
 
-
   function clearCurrentDriverTable() {
     document.getElementById("td-driver-name").innerHTML = '';
     document.getElementById("td-driver-nationality").innerHTML = '';
     document.getElementById("td-driver-races").innerHTML = '';
     document.getElementById("td-driver-wins").innerHTML = '';
   }
-
 
   function clearCurrentConstructorTable() {
     document.getElementById("td-constructor-name").innerHTML = '';
