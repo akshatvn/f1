@@ -57,6 +57,18 @@
     .page.closed {
       max-height: 0;
     }
+
+    .nav {
+      border: none;
+      border-radius: 5px;
+      padding: 6px 18px;
+      color: inherit;
+      text-align: center;
+      cursor: pointer;
+
+      background-color: #04AA6D;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body onload="loadConstructorsPage()">
@@ -88,7 +100,7 @@
 </div>
 <div id="page-2" class="page closed">
   <h2 id="page-2-title">Drivers</h2>
-  <button onclick="goToConstructorsPageFromDrivers()">< Back to Constructors</button>
+  <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
   <div id='vis-constructor-drivers'>
     <div id="driver-detail">
       <table>
@@ -114,7 +126,7 @@
 </div>
 <div id="page-3" class="page closed">
   <h2 id="page-3-title">Driver History</h2>
-  <button id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">< Back to Constructor</button>
+  <a class='nav' id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">❮ Back to Constructor</a>
   <div id='vis-driver'></div>
 </div>
 </body>
@@ -135,7 +147,92 @@
     console.log("loadSingleDriverPage usefulResults", usefulResults);
 
     document.getElementById('page-3-title').innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname + "'s Career at a Glance";
-    document.getElementById('page-3-back-btn').innerHTML = "< Back to " + windowConstructor.name
+    document.getElementById('page-3-back-btn').innerHTML = "❮ Back to " + windowConstructor.name;
+
+    allRaceIds = usefulResults.map(r => r.raceId);
+    const usefulRaces = races.filter(c => allRaceIds.indexOf(c.raceId) != -1)
+    console.log("usefulRaces", usefulRaces);
+
+    var chartData = []; // array of {year:, constructor: points}
+    let groupedData = {};
+    let allConstructors = [];
+    let addedYears = [];
+    let maxPoints = 0;
+    let yearPoints = {};
+
+    for (let i = 0; i < usefulRaces.length; i++) {
+      let race = usefulRaces[i];
+      let result = usefulResults.find(c => c.raceId == race.raceId);
+      let constructor = constructors.find(c => c.constructorId == result.constructorId);
+
+      if (!groupedData[race.year]) {
+        groupedData[race.year] = {year: race.year}
+      }
+      if (!groupedData[race.year][constructor.constructorId]) {
+        groupedData[race.year][constructor.constructorId] = 0
+      }
+
+      groupedData[race.year][constructor.constructorId] += +result.points;
+      yearPoints[race.year] += +result.points;
+
+      if (allConstructors.indexOf(constructor.constructorId) == -1) {
+        allConstructors.push(constructor.constructorId);
+      }
+      if (addedYears.indexOf(race.year) == -1) {
+        addedYears.push(race.year)
+      }
+    }
+
+    for (const k in groupedData) {
+      chartData.push(groupedData[k])
+    }
+
+    for (let i = 0; i < chartData.length; i++) {
+      row = chartData[i];
+      for (const k in row) {
+        if (k != 'year' && k != 'totalPoints') {
+          chartData[i]['totalPoints'] = (chartData[i]['totalPoints'] || 0) + row[k];
+          if (maxPoints < chartData[i]['totalPoints'] ) {
+            maxPoints = chartData[i]['totalPoints'];
+          }
+        }
+      }
+    }
+
+    console.log("chartData", chartData);
+    console.log("maxPoints", maxPoints);
+
+    var margin = {top: 120, right: 160, bottom: 120, left: 160};
+
+    var width = window.innerWidth - margin.left - margin.right,
+      height = window.innerHeight - margin.top - margin.bottom;
+
+    d3.select('#vis-driver').select('svg').remove();
+
+    var svg = d3.select("#vis-driver")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // var parse = d3.time.format("%Y").parse;
+
+    var x = d3.scaleBand()
+      .domain(addedYears)
+      .range([0, width])
+      .padding([0.2]);
+
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x).tickSizeOuter(0));
+
+    var y = d3.scaleLinear()
+      .domain([0, maxPoints])
+      .range([height, 0]);
+
+    svg.append("g")
+      .call(d3.axisLeft(y));
 
     document.getElementById('page-3').classList.toggle('closed');
   }
@@ -154,7 +251,7 @@
       delete results.columns;
     }
     console.log("results", results);
-    document.getElementById('page-2-title').innerHTML = "Top " + selectedConstructor.name + " Drivers";
+    document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='goToConstructorsPageFromDrivers()'>All Constructors</a> > Top " + selectedConstructor.name + " Drivers";
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
@@ -297,7 +394,7 @@
         return (prev.wins > current.wins) ? prev : current
       });
       if (biggestBubble.wins > 0) {
-        forceStrength = 0.04 * (data.length/biggestBubble.wins);
+        forceStrength = 0.04 * (data.length / biggestBubble.wins);
       }
     }
 
