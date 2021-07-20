@@ -204,8 +204,8 @@
 
     var margin = {top: 120, right: 160, bottom: 120, left: 160};
 
-    var width = window.innerWidth - margin.left - margin.right,
-      height = window.innerHeight - margin.top - margin.bottom;
+    var width = window.innerWidth * 0.8,
+      height = window.innerHeight * 0.5;
 
     d3.select('#vis-driver').select('svg').remove();
 
@@ -235,14 +235,20 @@
       .call(d3.axisLeft(y));
 
     // console.log("allConstructors", allConstructors);
-    const colorMap = allConstructors.map((c) => {
-      return constructors.find(d => d.constructorId == c).color
+    const colorMap = {};
+    const colors = allConstructors.map((c) => {
+      con = constructors.find(d => d.constructorId == c)
+      color = con.color;
+      colorMap[color] = colorMap[color] || []
+      colorMap[color].push(con.name);
+      return color;
     });
 
-    console.log("colorMap", colorMap);
+
+    console.log("colors", colors);
     var color = d3.scaleOrdinal()
       .domain(allConstructors)
-      .range(colorMap);
+      .range(colors);
 
     var stackedData = d3.stack()
       .keys(allConstructors)
@@ -253,7 +259,7 @@
       .data(stackedData)
       .enter().append("g")
       .attr("fill", function (d) {
-        return color(d.key).length ==0 ? "BLUE" : color(d.key);
+        return color(d.key).length == 0 ? "BLUE" : color(d.key);
       })
       .selectAll("rect")
       .data(function (d) {
@@ -269,7 +275,63 @@
       .attr("height", function (d) {
         return y(d[0]) - y(d[1]);
       })
-      .attr("width", x.bandwidth());
+      .attr("width", x.bandwidth())
+      .on("mouseover", function () {
+        tooltip.style("display", null);
+      })
+      .on("mouseout", function () {
+        tooltip.style("display", "none");
+      })
+      .on("mousemove", function (d) {
+        var xPosition = d3.mouse(this)[0] - 15;
+        var yPosition = d3.mouse(this)[1] - 25;
+        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+        console.log("d", d);
+        tooltip.select("text").text(d.data.totalPoints);
+      });
+
+    var legend = svg.selectAll(".legend")
+      .data(colors)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function (d, i) {
+        return "translate(0," + i * 19 + ")";
+      });
+
+    legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", function (d, i) {
+        return colors[i];
+      });
+
+
+    legend.append("text")
+      .attr("x", width + 5)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "start")
+      .text(function (d, i) {
+        return colorMap[d].join();
+      });
+
+    var tooltip = svg.append("g")
+      .attr("class", "tooltip")
+      .style("display", "none");
+
+    tooltip.append("rect")
+      .attr("width", 30)
+      .attr("height", 20)
+      .attr("fill", "white");
+
+
+    tooltip.append("text")
+      .attr("x", 15)
+      .attr("dy", "1.2em")
+      .style("text-anchor", "middle")
+      .attr("font-size", "12px")
+      .attr("font-weight", "bold");
 
     document.getElementById('page-3').classList.toggle('closed');
   }
