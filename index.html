@@ -59,16 +59,12 @@
     }
 
     .nav {
-      border: none;
-      border-radius: 5px;
-      padding: 6px 18px;
       color: inherit;
       text-align: center;
       cursor: pointer;
-
-      background-color: #04AA6D;
-      color: #ffffff;
-      margin: 10%;
+    }
+    .nav:hover {
+      color: BLUE;
     }
 
     .float-container .custom-tooltip {
@@ -115,7 +111,7 @@
 <div id="page-2" class="page closed">
   <h2 id="page-2-title">Drivers</h2>
   <div class="float-container">
-    <a class='nav' onclick="goToConstructorsPageFromDrivers()">❮ Back to All Constructors</a>
+    <!-- <a class='nav' onclick="gotoPage1()">❮ Back to All Constructors</a> -->
     <div id='vis-constructor-drivers' class="vis float-child"></div>
     <div id="driver-detail" class="float-child custom-tooltip closed">
       <table>
@@ -150,7 +146,7 @@
 <div id="page-3" class="page closed">
   <h2 id="page-3-title">Driver History</h2>
   <div class="float-container">
-    <a class='nav' id="page-3-back-btn" onclick="goToConstructorPageFromDriverHistory()">❮ Back to Constructor</a>
+    <!-- <a class='nav' id="page-3-back-btn" onclick="gotoPage2()">❮ Back to Constructor</a> -->
     <div id='vis-driver'></div>
     <div id="driver-year-detail" class="float-child custom-tooltip closed">
       <table>
@@ -194,8 +190,8 @@
     const usefulResults = results.filter(c => c.driverId == selectedDriver.id);
     console.log("loadSingleDriverPage usefulResults", usefulResults);
 
-    document.getElementById('page-3-title').innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname + "'s Career at a Glance";
-    document.getElementById('page-3-back-btn').innerHTML = "❮ Back to " + windowConstructor.name;
+    document.getElementById('page-3-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> <a class='nav' onclick='gotoPage2()'> " + windowConstructor.name + " 》</a> " + selectedDriver.forename + ' ' + selectedDriver.surname + "'s Career at a Glance";
+    // document.getElementById('page-3-back-btn').innerHTML = "❮ Back to " + windowConstructor.name;
 
     allRaceIds = usefulResults.map(r => r.raceId);
     const usefulRaces = races.filter(c => allRaceIds.indexOf(c.raceId) != -1)
@@ -386,7 +382,7 @@
       delete results.columns;
     }
     // console.log("results", results);
-    document.getElementById('page-2-title').innerHTML = "Top " + selectedConstructor.name + " Drivers";
+    document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> Top " + selectedConstructor.name + " Drivers";
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
@@ -459,16 +455,18 @@
 
   }
 
-  function goToConstructorPageFromDriverHistory() {
-    document.getElementById('page-3').classList.toggle('closed');
+  function gotoPage2() {
+    document.getElementById('page-3').classList.add('closed');
+    document.getElementById('page-1').classList.add('closed');
     display(constructor_arr, '#vis-all-constructors');
-    document.getElementById('page-2').classList.toggle('closed');
+    document.getElementById('page-2').classList.remove('closed');
   }
 
-  function goToConstructorsPageFromDrivers() {
-    document.getElementById('page-2').classList.toggle('closed');
+  function gotoPage1() {
+    document.getElementById('page-3').classList.add('closed');
+    document.getElementById('page-2').classList.add('closed');
     display(constructor_arr, '#vis-all-constructors');
-    document.getElementById('page-1').classList.toggle('closed');
+    document.getElementById('page-1').classList.remove('closed');
   }
 
   async function loadConstructorsPage() {
