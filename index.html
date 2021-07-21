@@ -274,14 +274,26 @@
 
     svg.append("g")
       .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x).tickSizeOuter(0));
+      .call(d3.axisBottom(x).tickSizeOuter(0))
+      .call(g => g.append("text")
+      .attr("x", width/2)
+      .attr("y", margin.bottom/4)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Year"));
 
     var y = d3.scaleLinear()
       .domain([0, maxPoints])
       .range([height, 0]);
 
     svg.append("g")
-      .call(d3.axisLeft(y));
+      .call(d3.axisLeft(y))
+      .call(g => g.append("text")
+      .attr("x", -height/8)
+      .attr("y", width/3)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Points"));
 
     // console.log("allConstructors", allConstructors);
     const colorMap = {};
