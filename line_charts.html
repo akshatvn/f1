@@ -48,6 +48,16 @@
     overflow: hidden;
   }
 
+  .grid line {
+    stroke: lightgrey;
+    stroke-opacity: 0.7;
+    shape-rendering: crispEdges;
+  }
+
+  .grid path {
+    stroke-width: 1;
+  }
+
 
 </style>
 
@@ -67,11 +77,11 @@
           <td id="td-constructor-nationality" class="data"></td>
         </tr>
         <tr>
-          <td>Races</td>
+          <td>Total Races</td>
           <td id="td-constructor-races" class="data"></td>
         </tr>
         <tr>
-          <td>Wins</td>
+          <td>Total Wins</td>
           <td id="td-constructor-wins" class="data"></td>
         </tr>
       </table>
@@ -95,16 +105,84 @@
   var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
 
   window.onmousemove = function (e) {
-    console.log("onmousemove", e.clientX, e.clientY);
     var x = (e.clientX + 20) + 'px',
       y = (e.clientY + 20) + 'px';
     for (var i = 0; i < tooltips.length; i++) {
       tooltips[i].style.top = y;
       tooltips[i].style.left = x;
-      // tooltips[i].style.top = 100;
-      // tooltips[i].style.left = 100;
     }
   };
+
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var xScale = d3.scaleLinear().range([0, width]);
+  var yScale = d3.scaleLinear().rangeRound([height, 0]);
+
+  var yaxis = d3.axisLeft().scale(yScale);
+  var xaxis = d3.axisBottom().scale(xScale);
+
+  function make_x_gridlines() {
+    return d3.axisBottom(xScale)
+      .ticks(5)
+  }
+
+  // gridlines in y axis function
+  function make_y_gridlines() {
+    return d3.axisLeft(yScale)
+      .ticks(5)
+  }
+
+
+  var svg = d3.select("#page-1-vis").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+      "translate(" + margin.left + "," + margin.top + ")");
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myXaxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xaxis);
+
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myYaxis")
+    .call(yaxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("dy", ".75em")
+    .attr("y", 6)
+    .style("text-anchor", "end")
+    .text("Wins");
+  ;
+
+  var line = d3.line()
+    .x(function (d) {
+      return xScale(d.year);
+    })
+    .y(function (d) {
+      return !d.wins ? null : yScale(d.wins);
+    });
+
+
+  svg.append("g")
+    .attr("class", "grid")
+    .attr("transform", "translate(0," + height + ")")
+    .call(make_x_gridlines()
+      .tickSize(-height)
+      .tickFormat("")
+    );
+
+  // add the Y gridlines
+  svg.append("g")
+    .attr("class", "grid")
+    .call(make_y_gridlines()
+      .tickSize(-width)
+      .tickFormat("")
+    );
 
 
   async function loadAllData() {
@@ -156,8 +234,6 @@
           page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
           page1DataByYear[resultYear][result.constructorId] = page1DataByYear[resultYear][result.constructorId] || 0;
           page1DataByYear[resultYear][result.constructorId] += 1
-
-
         }
       }
     }
@@ -168,82 +244,101 @@
         page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
         page1DataByConstructor[constructorId].push({
           year: year,
-          wins: page1DataByYear[year][constructorId]
+          wins: page1DataByYear[year][constructorId],
+          // cumulativeWins:
         })
       }
     }
 
     console.log("page1DataByConstructor", page1DataByConstructor);
 
-    slices = [];
+    // console.log("page1DataByConstructor", page1DataByConstructor);
+    yearlyWinData = [];
     for (constructorId in page1DataByConstructor) {
-      slices.push({
+      yearlyWinData.push({
           constructorId: constructorId,
           values: page1DataByConstructor[constructorId]
         }
       )
     }
-    console.log("slices", slices);
 
 
     // page1Data = [];
 
     // console.log("page1Data", page1Data);
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
-      width = 960 - margin.left - margin.right,
-      height = 500 - margin.top - margin.bottom;
+    console.log("yearlyWinData", yearlyWinData);
+    // updateLineChart(yearlyWinData);
+
+    // console.log("yearlyWinData", yearlyWinData);
+
+    cumulativeWinData = [];
+    cumulativeByConstructor = {};
+    for (year in page1DataByYear) {
+      for (constructorId in page1DataByYear[year]) {
+        cumulativeByConstructor[constructorId] = cumulativeByConstructor[constructorId] || {};
+        cumulativeByConstructor[constructorId]['so_far'] = cumulativeByConstructor[constructorId]['so_far'] || 0;
+        cumulativeByConstructor[constructorId]['so_far'] += +page1DataByYear[year][constructorId];
+        cumulativeByConstructor[constructorId]['values'] = cumulativeByConstructor[constructorId]['values'] || []
+        cumulativeByConstructor[constructorId]['values'].push({
+          year: year,
+          wins: cumulativeByConstructor[constructorId]['so_far']
+        })
+
+      }
+
+    }
+
+    for (constructorId in cumulativeByConstructor) {
+      cumulativeWinData.push({
+          constructorId: constructorId,
+          values: cumulativeByConstructor[constructorId]['values']
+        }
+      )
+    }
+
+    console.log("cumulativeByConstructor", cumulativeByConstructor);
 
 
-    const xScale = d3.scaleLinear().range([0, width]);
+    console.log("cumulativeWinData", cumulativeWinData);
+
+    // window.setTimeout(function () {
+    updateLineChart(cumulativeWinData);
+    // }, 5000)
+
+    // window.setTimeout(function () {
+    //   updateLineChart(yearlyWinData);
+    // }, 3000);
+  }
+
+
+  function updateLineChart(formattedData) {
     xScale.domain([1950, 2020]);
-
-    const yScale = d3.scaleLinear().rangeRound([height, 0]);
-    yScale.domain([(0), d3.max(slices, function (c) {
+    yScale.domain([(0), d3.max(formattedData, function (c) {
       return d3.max(c.values, function (d) {
         return d.wins + 4;
       });
     })
     ]);
-    const yaxis = d3.axisLeft().scale(yScale);
-    const xaxis = d3.axisBottom().scale(xScale);
-
-    var svg = d3.select("#page-1-vis").append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
-    svg.append("g")
-      .attr("class", "axis")
-      .attr("transform", "translate(0," + height + ")")
+    svg.selectAll(".myXaxis").transition()
+      .duration(1500)
       .call(xaxis);
+    svg.selectAll(".myYaxis")
+      .transition()
+      .duration(1500)
+      .call(yaxis);
 
-    svg.append("g")
-      .attr("class", "axis")
-      .call(yaxis)
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("dy", ".75em")
-      .attr("y", 6)
-      .style("text-anchor", "end")
-      .text("Wins");
-    ;
+    const lines = svg.selectAll("chartLine")
+      .data(formattedData);
 
-    const line = d3.line()
-      .x(function (d) {
-        return xScale(d.year);
-      })
-      .y(function (d) {
-        return !d.wins ? null : yScale(d.wins);
-      });
 
-    const lines = svg.selectAll("lines")
-      .data(slices)
-      .enter()
-      .append("g");
-
-    lines.append("path")
+    lines.enter()
+      .append("g")
+      .append("path")
+      .attr("class", "chartLine")
+      .merge(lines)
+      .transition()
+      .duration(1500)
       .attr("d", function (d) {
         return line(d.values);
       })
@@ -254,11 +349,21 @@
         return constructorById[d.constructorId].color;
       })
       .attr("stroke-width", 3)
-      .on("mouseover", handleMouseOver)
-      .on("mouseout", handleMouseOut);
-
-
+    // .on("mouseover", handleMouseOver)
+    // .on("mouseout", handleMouseOut);
   }
+
+
+  // formattedData = [
+  //    {
+  //      constructorId: "1",
+  //      values: [
+  //        {year: "1972", wins: 1},
+  //        {year: "1973", wins: 3},
+  //      ]
+  //    },
+  // ]
+
 
   function handleMouseOver(d, i) {
     document.getElementById('constructor-detail').classList.remove('closed');
