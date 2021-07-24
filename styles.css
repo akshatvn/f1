@@ -71,3 +71,25 @@ path {
     text-align: center;
     cursor: pointer;
 }
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+.focus circle {
+    fill: steelblue;
+}
+
+.focus text {
+    font-size: 14px;
+}
+
+.tooltip {
+    fill: white;
+    stroke: #000;
+}
+
+.tooltip-year, .tooltip-wins {
+    font-weight: bold;
+}
