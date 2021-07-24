@@ -58,6 +58,10 @@
     stroke-width: 1;
   }
 
+  .chartLine:hover {
+    cursor: pointer;
+  }
+
 
 </style>
 
@@ -303,7 +307,7 @@
     console.log("cumulativeWinData", cumulativeWinData);
 
     // window.setTimeout(function () {
-    updateLineChart(cumulativeWinData);
+    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
     // }, 5000)
 
     // window.setTimeout(function () {
@@ -312,9 +316,32 @@
   }
 
 
-  function updateLineChart(formattedData) {
-    xScale.domain([1950, 2020]);
-    yScale.domain([(0), d3.max(formattedData, function (c) {
+  // [
+  //   {
+  //    constructorId: '51'
+  //    values: [
+  //      {'1950': 6}
+  //       {}
+  //    ]
+  //   }
+  // ]
+  function updateLineChart(formattedData, mouseHandlers) {
+    xScale.domain([
+      d3.min(formattedData, function (c) {
+        return d3.min(c.values, function (d) {
+          return d.year;
+        });
+      }),
+      d3.max(formattedData, function (c) {
+        return d3.max(c.values, function (d) {
+          return d.year;
+        });
+      })
+    ]);
+
+    yScale.domain([
+      0,
+      d3.max(formattedData, function (c) {
       return d3.max(c.values, function (d) {
         return d.wins + 4;
       });
@@ -323,22 +350,18 @@
     svg.selectAll(".myXaxis").transition()
       .duration(1500)
       .call(xaxis);
+
     svg.selectAll(".myYaxis")
       .transition()
       .duration(1500)
       .call(yaxis);
 
     const lines = svg.selectAll("chartLine")
-      .data(formattedData);
-
-
-    lines.enter()
+      .data(formattedData)
+      .enter()
       .append("g")
       .append("path")
       .attr("class", "chartLine")
-      .merge(lines)
-      .transition()
-      .duration(1500)
       .attr("d", function (d) {
         return line(d.values);
       })
@@ -348,24 +371,23 @@
       .attr("stroke", function (d) {
         return constructorById[d.constructorId].color;
       })
-      .attr("stroke-width", 3)
-    // .on("mouseover", handleMouseOver)
-    // .on("mouseout", handleMouseOut);
+      .attr("stroke-width", 3);
+    ;
+
+
+    lines
+      .merge(lines)
+      .transition()
+      .duration(1500)
+
+
+    lines.on("mouseover", mouseHandlers[0])
+      .on("mouseout", mouseHandlers[1]);
   }
 
 
-  // formattedData = [
-  //    {
-  //      constructorId: "1",
-  //      values: [
-  //        {year: "1972", wins: 1},
-  //        {year: "1973", wins: 3},
-  //      ]
-  //    },
-  // ]
-
-
   function handleMouseOver(d, i) {
+    console.log("mouse over", d, i);
     document.getElementById('constructor-detail').classList.remove('closed');
     populateCurrentConstructorTable(constructorById[d.constructorId]);
   }
