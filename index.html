@@ -79,13 +79,21 @@
       overflow: hidden;
     }
 
+    .page-description {
+      text-align: center;
+    }
+
   </style>
 </head>
 <body onload="loadConstructorsPage()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page closed">
-  <h2>Constructors By Race Victories</h2>
+  <h2>All Constructors</h2>
   <div class="float-container">
+    <div id="page-1-description" class="page-description">
+      <h3>All Constructors By Race Victories</h3>
+      <p>Hover over a bubble for more details. Click on it for drilling down</p>
+    </div>
     <div id='vis-all-constructors' class="vis float-child"></div>
     <div id="constructor-detail" class="float-child custom-tooltip closed">
       <table>
@@ -112,6 +120,7 @@
 <div id="page-2" class="page closed">
   <h2 id="page-2-title">Drivers</h2>
   <div class="float-container">
+    <div id="page-2-description" class="page-description"></div>
     <!-- <a class='nav' onclick="gotoPage1()">❮ Back to All Constructors</a> -->
     <div id='vis-constructor-drivers' class="vis float-child"></div>
     <div id="driver-detail" class="float-child custom-tooltip closed">
@@ -147,6 +156,7 @@
 <div id="page-3" class="page closed">
   <h2 id="page-3-title">Driver History</h2>
   <div class="float-container">
+    <div id="page-3-description" class="page-description"></div>
     <!-- <a class='nav' id="page-3-back-btn" onclick="gotoPage2()">❮ Back to Constructor</a> -->
     <div id='vis-driver'></div>
     <div id="driver-year-detail" class="float-child custom-tooltip closed">
@@ -194,7 +204,8 @@
     const usefulResults = results.filter(c => c.driverId == selectedDriver.id);
     console.log("loadSingleDriverPage usefulResults", usefulResults);
 
-    document.getElementById('page-3-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> <a class='nav' onclick='gotoPage2()'> " + windowConstructor.name + " 》</a> " + selectedDriver.forename + ' ' + selectedDriver.surname + "'s Victories at a Glance";
+    document.getElementById('page-3-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> <a class='nav' onclick='gotoPage2()'> " + windowConstructor.name + " 》</a> " + selectedDriver.forename + ' ' + selectedDriver.surname ;
+    document.getElementById('page-3-description').innerHTML = "<h3>" + selectedDriver.forename + ' ' + selectedDriver.surname + "'s Victories at a Glance</h3>";
     // document.getElementById('page-3-back-btn').innerHTML = "❮ Back to " + windowConstructor.name;
 
     allRaceIds = usefulResults.map(r => r.raceId);
@@ -390,8 +401,10 @@
       delete results.columns;
     }
     // console.log("results", results);
-    document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> Top " + selectedConstructor.name + " Drivers";
+    document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a>" + selectedConstructor.name;
+    document.getElementById('page-2-description').innerHTML = "<h3> Top " + selectedConstructor.name + " Drivers </h3>"
     document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
+
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
     const usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);

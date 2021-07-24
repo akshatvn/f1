@@ -1,0 +1,190 @@
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<style>
+  .axis line {
+    stroke: #706f6f;
+    stroke-width: 0.5;
+    shape-rendering: crispEdges;
+  }
+
+  /* axis contour */
+  .axis path {
+    stroke: #706f6f;
+    stroke-width: 0.7;
+    shape-rendering: crispEdges;
+  }
+
+  /* axis text */
+  .axis text {
+    fill: #2b2929;
+    font-family: Georgia;
+    font-size: 120%;
+  }
+
+  path {
+    fill: none;
+    /*stroke: #ed3700;*/
+  }
+
+</style>
+
+
+<body onload="loadAllData()">
+<div id="page-1" class="page">
+  <div id="page-1-vis"></div>
+</div>
+
+<div id="page-2" class="page">
+  <div id="page-2-vis"></div>
+</div>
+<div id="page-3" class="page">
+  <div id="page-3-vis"></div>
+</div>
+</body>
+
+<script>
+  var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
+  var constructors, races, results;
+  var raceById = {};
+  var constructorById = {};
+
+  async function loadAllData() {
+    if (!constructors) {
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
+      delete constructors.columns;
+    }
+
+    if (!races) {
+      races = await d3.csv(csv_root + "/data/races.csv");
+      delete races.columns;
+    }
+
+    if (!results) {
+      results = await d3.csv(csv_root + "/data/results.csv");
+      delete results.columns;
+    }
+    for (i = 0; i < races.length; i++) {
+      raceById[races[i].raceId] = races[i];
+    }
+    for (i = 0; i < constructors.length; i++) {
+      constructorById[constructors[i].constructorId] = constructors[i];
+    }
+
+    loadPage1();
+  }
+
+  function loadPage1() {
+    page1DataByYear = {};
+    page1DataByConstructor = {};
+    for (i = 0; i < results.length; i++) {
+      let result = results[i];
+      if (result['position'] === "1") {
+        let race = raceById[result.raceId];
+        if (!race) {
+          console.error("could not find race with ID ", result.raceId);
+        } else {
+          let resultYear = raceById[result.raceId].year;
+          // let constructorName = constructorById[result.constructorId].name;
+          page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
+          page1DataByYear[resultYear][result.constructorId] = page1DataByYear[resultYear][result.constructorId] || 0;
+          page1DataByYear[resultYear][result.constructorId] += 1
+
+
+        }
+      }
+    }
+
+    console.log("page1DataByYear", page1DataByYear);
+    for (year in page1DataByYear) {
+      for (constructorId in page1DataByYear[year]) {
+        page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
+        page1DataByConstructor[constructorId].push({
+          year: year,
+          wins: page1DataByYear[year][constructorId]
+        })
+      }
+    }
+
+    console.log("page1DataByConstructor", page1DataByConstructor);
+
+    slices = [];
+    for (constructorId in page1DataByConstructor) {
+      slices.push({
+          constructorId: constructorId,
+          values: page1DataByConstructor[constructorId]
+        }
+      )
+    }
+    console.log("slices", slices);
+
+
+    // page1Data = [];
+
+    // console.log("page1Data", page1Data);
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+
+    const xScale = d3.scaleLinear().range([0, width]);
+    xScale.domain([1950, 2020]);
+
+    const yScale = d3.scaleLinear().rangeRound([height, 0]);
+    yScale.domain([(0), d3.max(slices, function (c) {
+      return d3.max(c.values, function (d) {
+        return d.wins + 4;
+      });
+    })
+    ]);
+    const yaxis = d3.axisLeft().scale(yScale);
+    const xaxis = d3.axisBottom().scale(xScale);
+
+    var svg = d3.select("#page-1-vis").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xaxis);
+
+    svg.append("g")
+      .attr("class", "axis")
+      .call(yaxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("dy", ".75em")
+      .attr("y", 6)
+      .style("text-anchor", "end")
+      .text("Wins");
+    ;
+
+    const line = d3.line()
+      .x(function (d) {
+        return xScale(d.year);
+      })
+      .y(function (d) {
+        return yScale(d.wins);
+      });
+
+    const lines = svg.selectAll("lines")
+      .data(slices)
+      .enter()
+      .append("g");
+
+    lines.append("path")
+      .attr("d", function (d) {
+        return line(d.values);
+      })
+      .attr("constructor-id", function(d) {
+        return d.constructorId;
+      })
+      .attr("stroke", function(d) {
+        return constructorById[d.constructorId].color;
+      })
+      .attr("stroke-width", 1.5);
+
+  }
+</script>
