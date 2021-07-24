@@ -63,6 +63,7 @@
       text-align: center;
       cursor: pointer;
     }
+
     .nav:hover {
       color: BLUE;
     }
@@ -151,7 +152,10 @@
     <div id="driver-year-detail" class="float-child custom-tooltip closed">
       <table>
         <tr>
-          <td id="td-driver-year-points" class="data"></td>
+          <td id="td-driver-year-wins" class="data"></td>
+        </tr>
+        <tr>
+          <td id="td-driver-year-constructor" class="data"></td>
         </tr>
       </table>
     </div>
@@ -162,7 +166,7 @@
 <script>
   // var csv_root = "/Users/akshat/Fraternity/UIUC-MCS/CS416-Data-viz/narrative_viz/f1";
   var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
-  var defaultBubbleColor = "#0074D9";
+  var defaultConstructorColor = "#0074D9";
   var constructors, races, contructor_wins, results;
   var constructor_arr = [];
   var driver_arr = [];
@@ -222,7 +226,7 @@
       }
 
 
-      if ((allConstructors.indexOf(constructor.constructorId) == -1) && (groupedData[race.year][constructor.constructorId] > 0)){
+      if ((allConstructors.indexOf(constructor.constructorId) == -1) && (groupedData[race.year][constructor.constructorId] > 0)) {
         allConstructors.push(constructor.constructorId);
       }
     }
@@ -236,15 +240,15 @@
     for (let i = 0; i < chartData.length; i++) {
       row = chartData[i];
       for (const k in row) {
-        if (k != 'year' && k != 'totalPoints') {
-          chartData[i]['totalPoints'] = (chartData[i]['totalPoints'] || 0) + row[k];
-          if (maxPoints < chartData[i]['totalPoints']) {
-            maxPoints = chartData[i]['totalPoints'];
+        if (k != 'year' && k != 'totalWins') {
+          chartData[i]['totalWins'] = (chartData[i]['totalWins'] || 0) + row[k];
+          if (maxPoints < chartData[i]['totalWins']) {
+            maxPoints = chartData[i]['totalWins'];
           }
         }
       }
     }
-    chartData = chartData.filter(c => c.totalPoints > 0);
+    chartData = chartData.filter(c => c.totalWins > 0);
     chartYears = chartData.map(c => c.year);
 
     console.log("chartData", chartData);
@@ -264,7 +268,6 @@
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // var parse = d3.time.format("%Y").parse;
 
     var x = d3.scaleBand()
       .domain(chartYears)
@@ -275,11 +278,11 @@
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x).tickSizeOuter(0))
       .call(g => g.append("text")
-      .attr("x", width/2)
-      .attr("y", margin.bottom/4)
-      .attr("fill", "currentColor")
-      .attr("text-anchor", "end")
-      .text("Year"));
+        .attr("x", width / 2)
+        .attr("y", margin.bottom / 4)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "end")
+        .text("Year"));
 
     var y = d3.scaleLinear()
       .domain([0, maxPoints])
@@ -288,24 +291,21 @@
     svg.append("g")
       .call(d3.axisLeft(y))
       .call(g => g.append("text")
-      .attr("x", -height/8)
-      .attr("y", width/3)
-      .attr("fill", "currentColor")
-      .attr("text-anchor", "end")
-      .text("Points"));
+        .attr("x", -height / 8)
+        .attr("y", width / 3)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "end")
+        .text("Wins"));
 
-    // console.log("allConstructors", allConstructors);
     const colorMap = {};
     const colors = allConstructors.map((c) => {
-      con = constructors.find(d => d.constructorId == c)
+      con = constructors.find(d => d.constructorId == c);
       color = con.color;
-      colorMap[color] = colorMap[color] || []
+      colorMap[color] = colorMap[color] || [];
       colorMap[color].push(con.name);
       return color;
     });
 
-
-    console.log("colors", colors);
     var color = d3.scaleOrdinal()
       .domain(allConstructors)
       .range(colors);
@@ -314,13 +314,17 @@
       .keys(allConstructors)
       (chartData);
 
-
     svg.append("g")
       .selectAll("g")
       .data(stackedData)
       .enter().append("g")
       .attr("fill", function (d) {
-        return color(d.key).length == 0 ? defaultBubbleColor : color(d.key);
+        console.log(`COLOR: key: ${d.key} ; color: ${color(d.key)} ; constructor: ${colorMap[color(d.key)]} `);
+        return color(d.key).length == 0 ? defaultConstructorColor : color(d.key);
+      })
+      .attr("data-constructor-name", function (d) {
+        console.log(`key: ${d.key} ; color: ${color(d.key)} ; constructor: ${colorMap[color(d.key)]} `);
+        return colorMap[color(d.key)];
       })
       .selectAll("rect")
       .data(function (d) {
@@ -333,13 +337,14 @@
       .attr("y", function (d) {
         return y(d[1]);
       })
+      .attr("width", x.bandwidth())
+      .attr("entity-type", "driver-year")
+
       .attr("height", function (d) {
         return y(d[0]) - y(d[1]);
       })
-      .attr("width", x.bandwidth())
-      .attr("entity-type", "driver-year")
-      .on("mouseover", handleMouseOverBubble)
-      .on("mouseout", handleMouseOutBubble);
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut);
 
     var legend = svg.selectAll(".legend")
       .data(colors)
@@ -616,12 +621,12 @@
           if (!!d.color && d.color != "") {
             return d.color;
           }
-          return defaultBubbleColor;
+          return defaultConstructorColor;
         })
         .attr('stroke', d => invertColor(d.color))
         .attr('stroke-width', 1)
-        .on("mouseover", handleMouseOverBubble)
-        .on("mouseout", handleMouseOutBubble)
+        .on("mouseover", handleMouseOver)
+        .on("mouseout", handleMouseOut)
         .on("click", handleMouseClickBubble);
 
       // labels
@@ -669,7 +674,7 @@
     }
 
     if (!hex) {
-      hex = defaultBubbleColor;
+      hex = defaultConstructorColor;
     }
     if (hex.indexOf('#') === 0) {
       hex = hex.slice(1);
@@ -678,7 +683,7 @@
       hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
     if (hex.length !== 6) {
-      hex = defaultBubbleColor;
+      hex = defaultConstructorColor;
     }
     var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
       g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
@@ -688,7 +693,7 @@
 
 
   // Create Event Handlers for mouse
-  function handleMouseOverBubble(d, i) {  // Add interactivity
+  function handleMouseOver(d, i) {  // Add interactivity
     if (this.getAttribute("entity-type") == "constructor") {
       document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = constructor_arr.find(c => c.id == d.id);
@@ -699,15 +704,16 @@
       populateCurrentDriverTable(selectedDriver);
     } else if (this.getAttribute("entity-type") == "driver-year") {
       document.getElementById('driver-year-detail').classList.toggle('closed');
-      console.log("d", d);
-
-      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
-      populateCurrentDriverYearDetailTable(d);
+      populateCurrentDriverYearDetailTable(
+        d, {
+          constructorName: this.parentNode.getAttribute("data-constructor-name")
+        }
+      );
     }
     d3.select(this).attr("r", d.radius * 1.2);
   }
 
-  function handleMouseOutBubble(d, i) {
+  function handleMouseOut(d, i) {
     if (this.getAttribute("entity-type") == "constructor") {
       document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = null;
@@ -738,16 +744,14 @@
     }
   }
 
-  function populateCurrentDriverYearDetailTable(d) {
-    // document.getElementById('td-driver-year-constructor').innerHTML = data.
-    document.getElementById('td-driver-year-points').innerHTML = d[1] - d[0];
-    // document.getElementById('td-driver-year-wins').innerHTML = data.wins;
+  function populateCurrentDriverYearDetailTable(d, options) {
+    document.getElementById('td-driver-year-wins').innerHTML = d[1] - d[0];
+    document.getElementById('td-driver-year-constructor').innerHTML = options.constructorName;
   }
 
   function clearCurrentDriverYearDetailTable() {
-    // document.getElementById('td-driver-year-constructor').innerHTML = data.
-    document.getElementById('td-driver-year-points').innerHTML = "";
-    // document.getElementById('td-driver-year-wins').innerHTML = data.wins;
+    document.getElementById('td-driver-year-wins').innerHTML = '';
+    document.getElementById('td-driver-year-constructor').innerHTML = '';
   }
 
   function populateCurrentConstructorTable(selectedConstructor) {
