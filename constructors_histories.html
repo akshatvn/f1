@@ -1,4 +1,6 @@
 <script src='https://d3js.org/d3.v5.min.js'></script>
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
 <link rel="stylesheet" href="styles.css">
 
 <body onload="loadAllData()">
@@ -55,6 +57,12 @@
       tooltips[i].style.top = y;
       tooltips[i].style.left = x;
     }
+
+
+    // var x1 = d3.event.pageX - document.getElementById("page-1-svg").getBoundingClientRect().x + 10;
+    // var y1 = d3.event.pageY - document.getElementById("page-1-svg").getBoundingClientRect().y + 10;
+    // console.log("x, y", x1,y1);
+
   };
 
   var margin = {top: 20, right: 20, bottom: 30, left: 50},
@@ -80,11 +88,20 @@
 
 
   var svg = d3.select("#page-1-vis").append("svg")
+    .attr("id", "page-1-svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform",
       "translate(" + margin.left + "," + margin.top + ")");
+
+  svg.on("mouseover", function () {
+    var coordinates = d3.mouse(this);
+    var x1 = coordinates[0];
+    var y1 = coordinates[1];
+    console.log("x1,y1", x1, y1);
+  });
+
   svg.append("g")
     .attr("class", "axis")
     .attr("class", "myXaxis")
@@ -279,6 +296,8 @@
 
     // window.setTimeout(function () {
     updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
     // }, 5000)
 
     // window.setTimeout(function () {
@@ -387,6 +406,36 @@
     //   // focus.select(".tooltip-year").text((d.year));
     //   // focus.select(".tooltip-wins").text((d.wins));
     // }
+    const annotations = [
+      {
+        note: {
+          label: "Just before Shumacher came in",
+          title: "Ferrari's slowest years"
+        },
+        x: 536,
+        y: 254,
+        dy: -100,
+        dx: -100
+      },
+      {
+        note: {
+          label: "More than 10 wins every year since 2014!",
+          title: "Mercedes is back"
+        },
+        x: 800,
+        y: 428,
+        dy: -60,
+        dx: -40
+      }
+    ];
+
+// Add annotation to the chart
+    const makeAnnotations = d3.annotation()
+      .editMode(true)
+      .annotations(annotations);
+    svg
+      .append("g")
+      .call(makeAnnotations)
   }
 
   function handleMouseClick(d, i) {
