@@ -1,10 +1,13 @@
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <link rel="stylesheet" href="styles.css">
 
-
-
 <body onload="loadAllData()">
+<h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page">
+  <div id="page-1-description" class="page-description">
+    <h3>All Constructors By Race Victories</h3>
+    <p>Hover over a constructor's line for more details. Click on it for drilling down</p>
+  </div>
   <div id="page-1-vis" class="float-container">
 
     <div id="constructor-detail" class="custom-tooltip closed">
@@ -279,10 +282,10 @@
     yScale.domain([
       0,
       d3.max(formattedData, function (c) {
-      return d3.max(c.values, function (d) {
-        return d.wins + 4;
-      });
-    })
+        return d3.max(c.values, function (d) {
+          return d.wins + 4;
+        });
+      })
     ]);
     svg.selectAll(".myXaxis").transition()
       .duration(1500)
@@ -324,13 +327,12 @@
   }
 
   function handleMouseClick(d, i) {
-    let redirectPath = window.location.pathname.replace("constructors_histories", "constructor_drivers");
-    // console.log(this.getAttribute("constructor-id"));
-    redirectPath = redirectPath + `?c=${this.getAttribute("constructor-id")}`
-    window.location= redirectPath;
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructor_drivers.html");
+    window.location = redirectPath.join("/") + `?c=${this.getAttribute("constructor-id")}`;
 
   }
-
 
   function handleMouseOver(d, i) {
     document.getElementById('constructor-detail').classList.remove('closed');

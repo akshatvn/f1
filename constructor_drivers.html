@@ -2,7 +2,13 @@
 <link rel="stylesheet" href="styles.css">
 
 <body onload="loadAllData()">
+<h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page">
+  <h3 id="nav-bar"></h3>
+  <div id="page-1-description" class="page-description">
+    <h2 id="page-title"></h2>
+    <p>Hover over a driver's line for more details. Click on it for drilling down</p>
+  </div>
   <div id="page-1-vis" class="float-container">
 
     <div id="driver-detail" class="custom-tooltip closed">
@@ -36,7 +42,7 @@
   }
 
   // Would write the value of the QueryString-variable called name to the console
-  console.log("currentConstructor",getQueryStringValue("c"));
+  console.log("currentConstructor", getQueryStringValue("c"));
   var windowConstructorId = getQueryStringValue("c");
   var windowConstructor;
   var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
@@ -127,6 +133,12 @@
       .tickFormat("")
     );
 
+  function gotoAllConstructors(){
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructors_histories.html");
+    window.location = redirectPath.join("/") ;
+  }
 
   async function loadAllData() {
 
@@ -143,6 +155,9 @@
     }
     windowConstructor = constructorById[windowConstructorId];
 
+    document.getElementById("nav-bar").innerHTML =  "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" + windowConstructor.name;;
+
+
     if (!races) {
       races = await d3.csv(csv_root + "/data/races.csv");
       delete races.columns;
@@ -153,7 +168,7 @@
       results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
-    results = results.filter(function(r) {
+    results = results.filter(function (r) {
       return r.constructorId == windowConstructorId;
     });
 
@@ -165,7 +180,6 @@
     for (i = 0; i < drivers.length; i++) {
       driverById[drivers[i].driverId] = drivers[i];
     }
-
 
 
     for (i = 0; i < results.length; i++) {
