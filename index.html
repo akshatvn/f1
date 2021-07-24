@@ -190,7 +190,7 @@
     const usefulResults = results.filter(c => c.driverId == selectedDriver.id);
     console.log("loadSingleDriverPage usefulResults", usefulResults);
 
-    document.getElementById('page-3-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> <a class='nav' onclick='gotoPage2()'> " + windowConstructor.name + " 》</a> " + selectedDriver.forename + ' ' + selectedDriver.surname + "'s Career at a Glance";
+    document.getElementById('page-3-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a> <a class='nav' onclick='gotoPage2()'> " + windowConstructor.name + " 》</a> " + selectedDriver.forename + ' ' + selectedDriver.surname + "'s Victories at a Glance";
     // document.getElementById('page-3-back-btn').innerHTML = "❮ Back to " + windowConstructor.name;
 
     allRaceIds = usefulResults.map(r => r.raceId);
@@ -200,9 +200,9 @@
     var chartData = []; // array of {year:, constructor: points}
     let groupedData = {};
     let allConstructors = [];
-    let chartYears = [];
+
     let maxPoints = 0;
-    let yearPoints = {};
+    let yearWins = {};
 
     for (let i = 0; i < usefulRaces.length; i++) {
       let race = usefulRaces[i];
@@ -216,10 +216,13 @@
         groupedData[race.year][constructor.constructorId] = 0
       }
 
-      groupedData[race.year][constructor.constructorId] += +result.points;
-      yearPoints[race.year] += +result.points;
+      if (result.position === "1") {
+        groupedData[race.year][constructor.constructorId] += 1;
+        yearWins[race.year] += 1;
+      }
 
-      if (allConstructors.indexOf(constructor.constructorId) == -1) {
+
+      if ((allConstructors.indexOf(constructor.constructorId) == -1) && (groupedData[race.year][constructor.constructorId] > 0)){
         allConstructors.push(constructor.constructorId);
       }
     }
