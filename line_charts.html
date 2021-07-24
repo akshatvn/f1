@@ -1,5 +1,11 @@
 <script src='https://d3js.org/d3.v5.min.js'></script>
 <style>
+  .serie_label {
+    fill: #2b2929;
+    font-family: Georgia;
+    font-size: 80%;
+  }
+
   .axis line {
     stroke: #706f6f;
     stroke-width: 0.5;
@@ -25,12 +31,52 @@
     /*stroke: #ed3700;*/
   }
 
+  .closed {
+    max-height: 0;
+  }
+
+  .float-container .custom-tooltip {
+    display: none;
+    background: white;
+    border: black;
+    border-width: thin;
+  }
+
+  .float-container:hover .custom-tooltip {
+    display: block;
+    position: fixed;
+    overflow: hidden;
+  }
+
+
 </style>
 
 
 <body onload="loadAllData()">
 <div id="page-1" class="page">
-  <div id="page-1-vis"></div>
+  <div id="page-1-vis" class="float-container">
+
+    <div id="constructor-detail" class="custom-tooltip closed">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-constructor-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-constructor-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Races</td>
+          <td id="td-constructor-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Wins</td>
+          <td id="td-constructor-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div id="page-2" class="page">
@@ -41,11 +87,25 @@
 </div>
 </body>
 
-<script>
+<script id="page-1-script">
   var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
   var constructors, races, results;
   var raceById = {};
   var constructorById = {};
+  var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+
+  window.onmousemove = function (e) {
+    console.log("onmousemove", e.clientX, e.clientY);
+    var x = (e.clientX + 20) + 'px',
+      y = (e.clientY + 20) + 'px';
+    for (var i = 0; i < tooltips.length; i++) {
+      tooltips[i].style.top = y;
+      tooltips[i].style.left = x;
+      // tooltips[i].style.top = 100;
+      // tooltips[i].style.left = 100;
+    }
+  };
+
 
   async function loadAllData() {
     if (!constructors) {
@@ -67,6 +127,15 @@
     }
     for (i = 0; i < constructors.length; i++) {
       constructorById[constructors[i].constructorId] = constructors[i];
+    }
+
+    for (i = 0; i < results.length; i++) {
+      constructorById[results[i].constructorId].wins = constructorById[results[i].constructorId].wins || 0;
+      constructorById[results[i].constructorId].races = constructorById[results[i].constructorId].races || 0;
+      constructorById[results[i].constructorId].races += 1;
+      if (results[i].position === "1") {
+        constructorById[results[i].constructorId].wins += 1;
+      }
     }
 
     loadPage1();
@@ -166,7 +235,7 @@
         return xScale(d.year);
       })
       .y(function (d) {
-        return yScale(d.wins);
+        return !d.wins ? null : yScale(d.wins);
       });
 
     const lines = svg.selectAll("lines")
@@ -178,13 +247,41 @@
       .attr("d", function (d) {
         return line(d.values);
       })
-      .attr("constructor-id", function(d) {
+      .attr("constructor-id", function (d) {
         return d.constructorId;
       })
-      .attr("stroke", function(d) {
+      .attr("stroke", function (d) {
         return constructorById[d.constructorId].color;
       })
-      .attr("stroke-width", 1.5);
+      .attr("stroke-width", 3)
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut);
 
+
+  }
+
+  function handleMouseOver(d, i) {
+    document.getElementById('constructor-detail').classList.remove('closed');
+    populateCurrentConstructorTable(constructorById[d.constructorId]);
+  }
+
+  function populateCurrentConstructorTable(selectedConstructor) {
+    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
+    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
+    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
+    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+  }
+
+  function handleMouseOut(d, i) {
+    document.getElementById('constructor-detail').classList.add('closed');
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
+  }
+
+  function clearCurrentConstructorTable() {
+    document.getElementById("td-constructor-name").innerHTML = '';
+    document.getElementById("td-constructor-nationality").innerHTML = '';
+    document.getElementById("td-constructor-races").innerHTML = '';
+    document.getElementById("td-constructor-wins").innerHTML = '';
   }
 </script>
