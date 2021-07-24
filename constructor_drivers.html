@@ -29,6 +29,10 @@
           <td>Total Wins</td>
           <td id="td-driver-wins" class="data"></td>
         </tr>
+        <tr>
+          <td>Avg Wins/Year</td>
+          <td id="td-driver-win-rate" class="data"></td>
+        </tr>
       </table>
     </div>
   </div>
@@ -133,11 +137,11 @@
       .tickFormat("")
     );
 
-  function gotoAllConstructors(){
+  function gotoAllConstructors() {
     let split_path = window.location.pathname.split("/");
     let redirectPath = split_path.slice(0, split_path.length - 1);
     redirectPath.push("constructors_histories.html");
-    window.location = redirectPath.join("/") ;
+    window.location = redirectPath.join("/");
   }
 
   async function loadAllData() {
@@ -155,7 +159,8 @@
     }
     windowConstructor = constructorById[windowConstructorId];
 
-    document.getElementById("nav-bar").innerHTML =  "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" + windowConstructor.name;;
+    document.getElementById("nav-bar").innerHTML = "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" + windowConstructor.name;
+    ;
 
 
     if (!races) {
@@ -183,11 +188,24 @@
 
 
     for (i = 0; i < results.length; i++) {
-      driverById[results[i].driverId].wins = driverById[results[i].driverId].wins || 0;
-      driverById[results[i].driverId].races = driverById[results[i].driverId].races || 0;
-      driverById[results[i].driverId].races += 1;
-      if (results[i].position === "1") {
-        driverById[results[i].driverId].wins += 1;
+      let result =  results[i];
+      console.log("result", result);
+      let race = raceById[result.raceId];
+      if (race) {
+        resultYear = race.year;
+        driverById[results[i].driverId].wins = driverById[result.driverId].wins || 0;
+        driverById[result.driverId].races = driverById[result.driverId].races || 0;
+        driverById[result.driverId].races += 1;
+        if (!driverById[result.driverId].years) {
+          driverById[result.driverId].years = []
+        }
+        if (driverById[result.driverId].years.indexOf(resultYear) == -1) {
+          driverById[result.driverId].years.push(resultYear);
+        }
+
+        if (result.position === "1") {
+          driverById[result.driverId].wins += 1;
+        }
       }
     }
 
@@ -332,6 +350,7 @@
       .data(formattedData)
       .enter()
       .append("g")
+      .attr("class", "chartLine-g")
       .append("path")
       .attr("class", "chartLine")
       .attr("d", function (d) {
@@ -343,8 +362,24 @@
       .attr("stroke", function (d) {
         return windowConstructor.color;
       })
-      .attr("stroke-width", 3);
+      .attr("stroke-width", 3)
     ;
+
+    svg.selectAll(".chartLine-g")
+      .append("text")
+      .data(formattedData)
+      // .text("something")
+      .text(function (d) {
+        if (d.values.length > 2 && d.values[d.values.length - 1].wins > 10) {
+          return driverById[d.driverId].surname;
+        }
+      })
+      .attr("x", function (d) {
+        return xScale(d.values[d.values.length - 1].year) - 60;
+      })
+      .attr("y", function (d) {
+        return yScale(d.values[d.values.length - 1].wins);
+      });
 
 
     lines
@@ -368,6 +403,10 @@
     document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
     document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
     document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
+    if (selectedDriver.years.length > 0) {
+      document.getElementById("td-driver-win-rate").innerHTML = (+selectedDriver.wins / +(selectedDriver.years.length)).toFixed(2);
+    }
+
   }
 
   function handleMouseOut(d, i) {

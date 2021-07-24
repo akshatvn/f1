@@ -426,12 +426,21 @@
         y: 428,
         dy: -60,
         dx: -40
+      },
+      {
+        note: {
+          title: "Vettel quit"
+        },
+        x: 804,
+        y: 362,
+        dy: -140,
+        dx: -10
       }
     ];
 
 // Add annotation to the chart
     const makeAnnotations = d3.annotation()
-      .editMode(true)
+      // .editMode(true)
       .annotations(annotations);
     svg
       .append("g")
