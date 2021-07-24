@@ -70,42 +70,46 @@
 <div id="page-1" class="page">
   <div id="page-1-vis" class="float-container">
 
-    <div id="constructor-detail" class="custom-tooltip closed">
+    <div id="driver-detail" class="custom-tooltip closed">
       <table>
         <tr>
-          <td>Constructor</td>
-          <td id="td-constructor-name" class="data"></td>
+          <td>Driver</td>
+          <td id="td-driver-name" class="data"></td>
         </tr>
         <tr>
           <td>Nationality</td>
-          <td id="td-constructor-nationality" class="data"></td>
+          <td id="td-driver-nationality" class="data"></td>
         </tr>
         <tr>
           <td>Total Races</td>
-          <td id="td-constructor-races" class="data"></td>
+          <td id="td-driver-races" class="data"></td>
         </tr>
         <tr>
           <td>Total Wins</td>
-          <td id="td-constructor-wins" class="data"></td>
+          <td id="td-driver-wins" class="data"></td>
         </tr>
       </table>
     </div>
   </div>
 </div>
 
-<div id="page-2" class="page">
-  <div id="page-2-vis"></div>
-</div>
-<div id="page-3" class="page">
-  <div id="page-3-vis"></div>
-</div>
 </body>
 
 <script id="page-1-script">
+  function getQueryStringValue(key) {
+    return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+  }
+
+  // Would write the value of the QueryString-variable called name to the console
+  console.log("currentConstructor",getQueryStringValue("c"));
+  var windowConstructorId = getQueryStringValue("c");
+  var windowConstructor;
   var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
-  var constructors, races, results;
+  var drivers, races, results, drivers, constructors;
   var raceById = {};
   var constructorById = {};
+
+  var driverById = {};
   var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
 
   window.onmousemove = function (e) {
@@ -190,33 +194,51 @@
 
 
   async function loadAllData() {
+
+    if (!drivers) {
+      drivers = await d3.csv(csv_root + "/data/drivers.csv");
+      delete drivers.columns;
+    }
     if (!constructors) {
       constructors = await d3.csv(csv_root + "/data/constructors.csv");
       delete constructors.columns;
     }
+    for (i = 0; i < constructors.length; i++) {
+      constructorById[constructors[i].constructorId] = constructors[i];
+    }
+    windowConstructor = constructorById[windowConstructorId];
 
     if (!races) {
       races = await d3.csv(csv_root + "/data/races.csv");
       delete races.columns;
     }
 
+
     if (!results) {
       results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
+    results = results.filter(function(r) {
+      return r.constructorId == windowConstructorId;
+    });
+
     for (i = 0; i < races.length; i++) {
       raceById[races[i].raceId] = races[i];
     }
-    for (i = 0; i < constructors.length; i++) {
-      constructorById[constructors[i].constructorId] = constructors[i];
+
+
+    for (i = 0; i < drivers.length; i++) {
+      driverById[drivers[i].driverId] = drivers[i];
     }
 
+
+
     for (i = 0; i < results.length; i++) {
-      constructorById[results[i].constructorId].wins = constructorById[results[i].constructorId].wins || 0;
-      constructorById[results[i].constructorId].races = constructorById[results[i].constructorId].races || 0;
-      constructorById[results[i].constructorId].races += 1;
+      driverById[results[i].driverId].wins = driverById[results[i].driverId].wins || 0;
+      driverById[results[i].driverId].races = driverById[results[i].driverId].races || 0;
+      driverById[results[i].driverId].races += 1;
       if (results[i].position === "1") {
-        constructorById[results[i].constructorId].wins += 1;
+        driverById[results[i].driverId].wins += 1;
       }
     }
 
@@ -225,7 +247,7 @@
 
   function loadPage1() {
     page1DataByYear = {};
-    page1DataByConstructor = {};
+    page1DataByDriver = {};
     for (i = 0; i < results.length; i++) {
       let result = results[i];
       if (result['position'] === "1") {
@@ -234,34 +256,34 @@
           console.error("could not find race with ID ", result.raceId);
         } else {
           let resultYear = raceById[result.raceId].year;
-          // let constructorName = constructorById[result.constructorId].name;
+          // let driverName = driverById[result.driverId].name;
           page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
-          page1DataByYear[resultYear][result.constructorId] = page1DataByYear[resultYear][result.constructorId] || 0;
-          page1DataByYear[resultYear][result.constructorId] += 1
+          page1DataByYear[resultYear][result.driverId] = page1DataByYear[resultYear][result.driverId] || 0;
+          page1DataByYear[resultYear][result.driverId] += 1
         }
       }
     }
 
     console.log("page1DataByYear", page1DataByYear);
     for (year in page1DataByYear) {
-      for (constructorId in page1DataByYear[year]) {
-        page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
-        page1DataByConstructor[constructorId].push({
+      for (driverId in page1DataByYear[year]) {
+        page1DataByDriver[driverId] = page1DataByDriver[driverId] || [];
+        page1DataByDriver[driverId].push({
           year: year,
-          wins: page1DataByYear[year][constructorId],
+          wins: page1DataByYear[year][driverId],
           // cumulativeWins:
         })
       }
     }
 
-    console.log("page1DataByConstructor", page1DataByConstructor);
+    console.log("page1DataByDriver", page1DataByDriver);
 
-    // console.log("page1DataByConstructor", page1DataByConstructor);
+    // console.log("page1DataByDriver", page1DataByDriver);
     yearlyWinData = [];
-    for (constructorId in page1DataByConstructor) {
+    for (driverId in page1DataByDriver) {
       yearlyWinData.push({
-          constructorId: constructorId,
-          values: page1DataByConstructor[constructorId]
+          driverId: driverId,
+          values: page1DataByDriver[driverId]
         }
       )
     }
@@ -272,41 +294,42 @@
     // console.log("page1Data", page1Data);
 
     console.log("yearlyWinData", yearlyWinData);
-    // updateLineChart(yearlyWinData);
+
 
     // console.log("yearlyWinData", yearlyWinData);
 
     cumulativeWinData = [];
-    cumulativeByConstructor = {};
+    cumulativeByDriver = {};
     for (year in page1DataByYear) {
-      for (constructorId in page1DataByYear[year]) {
-        cumulativeByConstructor[constructorId] = cumulativeByConstructor[constructorId] || {};
-        cumulativeByConstructor[constructorId]['so_far'] = cumulativeByConstructor[constructorId]['so_far'] || 0;
-        cumulativeByConstructor[constructorId]['so_far'] += +page1DataByYear[year][constructorId];
-        cumulativeByConstructor[constructorId]['values'] = cumulativeByConstructor[constructorId]['values'] || []
-        cumulativeByConstructor[constructorId]['values'].push({
+      for (driverId in page1DataByYear[year]) {
+        cumulativeByDriver[driverId] = cumulativeByDriver[driverId] || {};
+        cumulativeByDriver[driverId]['so_far'] = cumulativeByDriver[driverId]['so_far'] || 0;
+        cumulativeByDriver[driverId]['so_far'] += +page1DataByYear[year][driverId];
+        cumulativeByDriver[driverId]['values'] = cumulativeByDriver[driverId]['values'] || []
+        cumulativeByDriver[driverId]['values'].push({
           year: year,
-          wins: cumulativeByConstructor[constructorId]['so_far']
+          wins: cumulativeByDriver[driverId]['so_far']
         })
 
       }
 
     }
 
-    for (constructorId in cumulativeByConstructor) {
+    for (driverId in cumulativeByDriver) {
       cumulativeWinData.push({
-          constructorId: constructorId,
-          values: cumulativeByConstructor[constructorId]['values']
+          driverId: driverId,
+          values: cumulativeByDriver[driverId]['values']
         }
       )
     }
 
-    console.log("cumulativeByConstructor", cumulativeByConstructor);
+    console.log("cumulativeByDriver", cumulativeByDriver);
 
 
     console.log("cumulativeWinData", cumulativeWinData);
 
     // window.setTimeout(function () {
+    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
     updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
     // }, 5000)
 
@@ -318,7 +341,7 @@
 
   // [
   //   {
-  //    constructorId: '51'
+  //    driverId: '51'
   //    values: [
   //      {'1950': 6}
   //       {}
@@ -342,10 +365,10 @@
     yScale.domain([
       0,
       d3.max(formattedData, function (c) {
-      return d3.max(c.values, function (d) {
-        return d.wins + 4;
-      });
-    })
+        return d3.max(c.values, function (d) {
+          return d.wins + 4;
+        });
+      })
     ]);
     svg.selectAll(".myXaxis").transition()
       .duration(1500)
@@ -365,11 +388,11 @@
       .attr("d", function (d) {
         return line(d.values);
       })
-      .attr("constructor-id", function (d) {
-        return d.constructorId;
+      .attr("driver-id", function (d) {
+        return d.driverId;
       })
       .attr("stroke", function (d) {
-        return constructorById[d.constructorId].color;
+        return windowConstructor.color;
       })
       .attr("stroke-width", 3);
     ;
@@ -378,7 +401,7 @@
     lines
       .merge(lines)
       .transition()
-      .duration(1500)
+      .duration(1500);
 
 
     lines.on("mouseover", mouseHandlers[0])
@@ -387,28 +410,27 @@
 
 
   function handleMouseOver(d, i) {
-    console.log("mouse over", d, i);
-    document.getElementById('constructor-detail').classList.remove('closed');
-    populateCurrentConstructorTable(constructorById[d.constructorId]);
+    document.getElementById('driver-detail').classList.remove('closed');
+    populateCurrentDriverTable(driverById[d.driverId]);
   }
 
-  function populateCurrentConstructorTable(selectedConstructor) {
-    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
-    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
-    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
-    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+  function populateCurrentDriverTable(selectedDriver) {
+    document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
+    document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
+    document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
+    document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
   }
 
   function handleMouseOut(d, i) {
-    document.getElementById('constructor-detail').classList.add('closed');
-    selectedConstructor = null;
-    clearCurrentConstructorTable();
+    document.getElementById('driver-detail').classList.add('closed');
+    selectedDriver = null;
+    clearCurrentDriverTable();
   }
 
-  function clearCurrentConstructorTable() {
-    document.getElementById("td-constructor-name").innerHTML = '';
-    document.getElementById("td-constructor-nationality").innerHTML = '';
-    document.getElementById("td-constructor-races").innerHTML = '';
-    document.getElementById("td-constructor-wins").innerHTML = '';
+  function clearCurrentDriverTable() {
+    document.getElementById("td-driver-name").innerHTML = '';
+    document.getElementById("td-driver-nationality").innerHTML = '';
+    document.getElementById("td-driver-races").innerHTML = '';
+    document.getElementById("td-driver-wins").innerHTML = '';
   }
 </script>

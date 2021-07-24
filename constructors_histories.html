@@ -1,0 +1,413 @@
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<style>
+  .serie_label {
+    fill: #2b2929;
+    font-family: Georgia;
+    font-size: 80%;
+  }
+
+  .axis line {
+    stroke: #706f6f;
+    stroke-width: 0.5;
+    shape-rendering: crispEdges;
+  }
+
+  /* axis contour */
+  .axis path {
+    stroke: #706f6f;
+    stroke-width: 0.7;
+    shape-rendering: crispEdges;
+  }
+
+  /* axis text */
+  .axis text {
+    fill: #2b2929;
+    font-family: Georgia;
+    font-size: 120%;
+  }
+
+  path {
+    fill: none;
+    /*stroke: #ed3700;*/
+  }
+
+  .closed {
+    max-height: 0;
+  }
+
+  .float-container .custom-tooltip {
+    display: none;
+    background: white;
+    border: black;
+    border-width: thin;
+  }
+
+  .float-container:hover .custom-tooltip {
+    display: block;
+    position: fixed;
+    overflow: hidden;
+  }
+
+  .grid line {
+    stroke: lightgrey;
+    stroke-opacity: 0.7;
+    shape-rendering: crispEdges;
+  }
+
+  .grid path {
+    stroke-width: 1;
+  }
+
+  .chartLine:hover {
+    cursor: pointer;
+  }
+
+
+</style>
+
+
+<body onload="loadAllData()">
+<div id="page-1" class="page">
+  <div id="page-1-vis" class="float-container">
+
+    <div id="constructor-detail" class="custom-tooltip closed">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-constructor-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-constructor-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Races</td>
+          <td id="td-constructor-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Wins</td>
+          <td id="td-constructor-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="page-2" class="page">
+  <div id="page-2-vis"></div>
+</div>
+<div id="page-3" class="page">
+  <div id="page-3-vis"></div>
+</div>
+</body>
+
+<script id="page-1-script">
+  var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
+  var constructors, races, results;
+  var raceById = {};
+  var constructorById = {};
+  var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+
+  window.onmousemove = function (e) {
+    var x = (e.clientX + 20) + 'px',
+      y = (e.clientY + 20) + 'px';
+    for (var i = 0; i < tooltips.length; i++) {
+      tooltips[i].style.top = y;
+      tooltips[i].style.left = x;
+    }
+  };
+
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var xScale = d3.scaleLinear().range([0, width]);
+  var yScale = d3.scaleLinear().rangeRound([height, 0]);
+
+  var yaxis = d3.axisLeft().scale(yScale);
+  var xaxis = d3.axisBottom().scale(xScale);
+
+  function make_x_gridlines() {
+    return d3.axisBottom(xScale)
+      .ticks(5)
+  }
+
+  // gridlines in y axis function
+  function make_y_gridlines() {
+    return d3.axisLeft(yScale)
+      .ticks(5)
+  }
+
+
+  var svg = d3.select("#page-1-vis").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+      "translate(" + margin.left + "," + margin.top + ")");
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myXaxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xaxis);
+
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myYaxis")
+    .call(yaxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("dy", ".75em")
+    .attr("y", 6)
+    .style("text-anchor", "end")
+    .text("Wins");
+  ;
+
+  var line = d3.line()
+    .x(function (d) {
+      return xScale(d.year);
+    })
+    .y(function (d) {
+      return !d.wins ? null : yScale(d.wins);
+    });
+
+
+  svg.append("g")
+    .attr("class", "grid")
+    .attr("transform", "translate(0," + height + ")")
+    .call(make_x_gridlines()
+      .tickSize(-height)
+      .tickFormat("")
+    );
+
+  // add the Y gridlines
+  svg.append("g")
+    .attr("class", "grid")
+    .call(make_y_gridlines()
+      .tickSize(-width)
+      .tickFormat("")
+    );
+
+
+  async function loadAllData() {
+    if (!constructors) {
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
+      delete constructors.columns;
+    }
+
+    if (!races) {
+      races = await d3.csv(csv_root + "/data/races.csv");
+      delete races.columns;
+    }
+
+    if (!results) {
+      results = await d3.csv(csv_root + "/data/results.csv");
+      delete results.columns;
+    }
+    for (i = 0; i < races.length; i++) {
+      raceById[races[i].raceId] = races[i];
+    }
+    for (i = 0; i < constructors.length; i++) {
+      constructorById[constructors[i].constructorId] = constructors[i];
+    }
+
+    for (i = 0; i < results.length; i++) {
+      constructorById[results[i].constructorId].wins = constructorById[results[i].constructorId].wins || 0;
+      constructorById[results[i].constructorId].races = constructorById[results[i].constructorId].races || 0;
+      constructorById[results[i].constructorId].races += 1;
+      if (results[i].position === "1") {
+        constructorById[results[i].constructorId].wins += 1;
+      }
+    }
+
+    loadPage1();
+  }
+
+  function loadPage1() {
+    page1DataByYear = {};
+    page1DataByConstructor = {};
+    for (i = 0; i < results.length; i++) {
+      let result = results[i];
+      if (result['position'] === "1") {
+        let race = raceById[result.raceId];
+        if (!race) {
+          console.error("could not find race with ID ", result.raceId);
+        } else {
+          let resultYear = raceById[result.raceId].year;
+          // let constructorName = constructorById[result.constructorId].name;
+          page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
+          page1DataByYear[resultYear][result.constructorId] = page1DataByYear[resultYear][result.constructorId] || 0;
+          page1DataByYear[resultYear][result.constructorId] += 1
+        }
+      }
+    }
+
+    console.log("page1DataByYear", page1DataByYear);
+    for (year in page1DataByYear) {
+      for (constructorId in page1DataByYear[year]) {
+        page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
+        page1DataByConstructor[constructorId].push({
+          year: year,
+          wins: page1DataByYear[year][constructorId],
+          // cumulativeWins:
+        })
+      }
+    }
+
+    console.log("page1DataByConstructor", page1DataByConstructor);
+
+    // console.log("page1DataByConstructor", page1DataByConstructor);
+    yearlyWinData = [];
+    for (constructorId in page1DataByConstructor) {
+      yearlyWinData.push({
+          constructorId: constructorId,
+          values: page1DataByConstructor[constructorId]
+        }
+      )
+    }
+
+
+    // page1Data = [];
+
+    // console.log("page1Data", page1Data);
+
+    console.log("yearlyWinData", yearlyWinData);
+    // updateLineChart(yearlyWinData);
+
+    // console.log("yearlyWinData", yearlyWinData);
+
+    cumulativeWinData = [];
+    cumulativeByConstructor = {};
+    for (year in page1DataByYear) {
+      for (constructorId in page1DataByYear[year]) {
+        cumulativeByConstructor[constructorId] = cumulativeByConstructor[constructorId] || {};
+        cumulativeByConstructor[constructorId]['so_far'] = cumulativeByConstructor[constructorId]['so_far'] || 0;
+        cumulativeByConstructor[constructorId]['so_far'] += +page1DataByYear[year][constructorId];
+        cumulativeByConstructor[constructorId]['values'] = cumulativeByConstructor[constructorId]['values'] || []
+        cumulativeByConstructor[constructorId]['values'].push({
+          year: year,
+          wins: cumulativeByConstructor[constructorId]['so_far']
+        })
+
+      }
+
+    }
+
+    for (constructorId in cumulativeByConstructor) {
+      cumulativeWinData.push({
+          constructorId: constructorId,
+          values: cumulativeByConstructor[constructorId]['values']
+        }
+      )
+    }
+
+    console.log("cumulativeByConstructor", cumulativeByConstructor);
+
+
+    console.log("cumulativeWinData", cumulativeWinData);
+
+    // window.setTimeout(function () {
+    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
+    // }, 5000)
+
+    // window.setTimeout(function () {
+    //   updateLineChart(yearlyWinData);
+    // }, 3000);
+  }
+
+
+  // [
+  //   {
+  //    constructorId: '51'
+  //    values: [
+  //      {'1950': 6}
+  //       {}
+  //    ]
+  //   }
+  // ]
+  function updateLineChart(formattedData, mouseHandlers) {
+    xScale.domain([
+      d3.min(formattedData, function (c) {
+        return d3.min(c.values, function (d) {
+          return d.year;
+        });
+      }),
+      d3.max(formattedData, function (c) {
+        return d3.max(c.values, function (d) {
+          return d.year;
+        });
+      })
+    ]);
+
+    yScale.domain([
+      0,
+      d3.max(formattedData, function (c) {
+      return d3.max(c.values, function (d) {
+        return d.wins + 4;
+      });
+    })
+    ]);
+    svg.selectAll(".myXaxis").transition()
+      .duration(1500)
+      .call(xaxis);
+
+    svg.selectAll(".myYaxis")
+      .transition()
+      .duration(1500)
+      .call(yaxis);
+
+    const lines = svg.selectAll("chartLine")
+      .data(formattedData)
+      .enter()
+      .append("g")
+      .append("path")
+      .attr("class", "chartLine")
+      .attr("d", function (d) {
+        return line(d.values);
+      })
+      .attr("constructor-id", function (d) {
+        return d.constructorId;
+      })
+      .attr("stroke", function (d) {
+        return constructorById[d.constructorId].color;
+      })
+      .attr("stroke-width", 3);
+    ;
+
+
+    lines
+      .merge(lines)
+      .transition()
+      .duration(1500);
+
+
+    lines.on("mouseover", mouseHandlers[0])
+      .on("mouseout", mouseHandlers[1]);
+  }
+
+
+  function handleMouseOver(d, i) {
+    document.getElementById('constructor-detail').classList.remove('closed');
+    populateCurrentConstructorTable(constructorById[d.constructorId]);
+  }
+
+  function populateCurrentConstructorTable(selectedConstructor) {
+    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
+    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
+    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
+    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+  }
+
+  function handleMouseOut(d, i) {
+    document.getElementById('constructor-detail').classList.add('closed');
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
+  }
+
+  function clearCurrentConstructorTable() {
+    document.getElementById("td-constructor-name").innerHTML = '';
+    document.getElementById("td-constructor-nationality").innerHTML = '';
+    document.getElementById("td-constructor-races").innerHTML = '';
+    document.getElementById("td-constructor-wins").innerHTML = '';
+  }
+</script>
