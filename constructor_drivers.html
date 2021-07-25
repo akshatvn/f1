@@ -466,7 +466,7 @@
           }
         })
         .attr("x", function (d) {
-          return xScale(d.values[d.values.length - 1].year) - 60;
+          return Math.min(770, xScale(d.values[d.values.length - 1].year));
         })
         .attr("y", function (d) {
           return yScale(d.values[d.values.length - 1].wins);

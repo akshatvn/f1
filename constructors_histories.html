@@ -15,6 +15,8 @@
   <div id="nav-row">
     <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
   </div>
+  
+
   <div id="page-1-vis-wrap" class="float-container">
     <div id="page-1-vis">
     </div>
@@ -39,21 +41,27 @@
       </table>
     </div>
     <p>Hover over a constructor's mark for more details. Click on it for drilling down</p>
-    <p>This scene is an overview of all F1 constructors' cumulative win histories plotted as lines. The lines discontinue if there were no more victories for that constructor, irrespective of whether they participated or not. </p>
+    <p>This scene is an overview of all F1 constructors' cumulative win histories plotted as lines. The lines
+      discontinue if there were no more victories for that constructor, irrespective of whether they participated or
+      not. </p>
     <p>Hovering over the lines or bubbles gives some aggregated information about the constructor.</p>
-    <p><span style="font-weight: bold">Nav Tip: </span>Click on a constructor's mark to go to the next scene, specific to the chosen constructor.</p>
+    <p><span style="font-weight: bold">Nav Tip: </span>Click on a constructor's mark to go to the next scene, specific
+      to the chosen constructor.</p>
   </div>
 </div>
 
 </body>
 
 <script id="page-1-script">
+
+  var constructors, races, results;
+
+
   function showTimeline() {
 
     document.getElementById("page-1-vis").setAttribute("current-view", "timeline");
     document.getElementById("view-toggle-btn").innerText = "Switch to Totals";
     var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
-    var constructors, races, results;
 
 
     var raceById = {};
@@ -597,8 +605,8 @@
       // create svg element inside provided selector
       svg = d3.select(selector)
         .append('svg')
-        .attr('width',  width)
-        .attr('height',  height)
+        .attr('width', width)
+        .attr('height', height)
         .attr('style', 'backgound: lightgray;');
 
       // bind nodes data to circle elements
