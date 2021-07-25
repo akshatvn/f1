@@ -1,0 +1,421 @@
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+
+<body onload="loadAllData()">
+<h1>Formula 1 World Championships (1950 - 2020)</h1>
+<div id="page-1" class="page">
+  <h3 id="nav-bar"></h3>
+  <div id="page-1-description" class="page-description">
+    <h3 id="page-title"></h3>
+    <p>Hover over a driver's line for more details.</p>
+  </div>
+  <div id="page-1-vis" class="float-container">
+
+    <div id="constructor-detail" class="custom-tooltip closed">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-constructor-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-constructor-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Races</td>
+          <td id="td-constructor-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Wins</td>
+          <td id="td-constructor-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+
+<script id="page-1-script">
+  function getQueryStringValue(key) {
+    return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+  }
+
+  // Would write the value of the QueryString-variable called name to the console
+  console.log("currentConstructor", getQueryStringValue("c"));
+  var windowDriverId = getQueryStringValue("d");
+  var windowDriver;
+  var windowConstructorId = getQueryStringValue("c");
+  var windowConstructor;
+  var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
+  var drivers, races, results, drivers, constructors;
+  var raceById = {};
+  var constructorById = {};
+
+  var driverById = {};
+  var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+
+  window.onmousemove = function (e) {
+    var x = (e.clientX + 20) + 'px',
+      y = (e.clientY + 20) + 'px';
+    for (var i = 0; i < tooltips.length; i++) {
+      tooltips[i].style.top = y;
+      tooltips[i].style.left = x;
+    }
+  };
+
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var xScale = d3.scaleLinear().range([0, width]);
+  var yScale = d3.scaleLinear().rangeRound([height, 0]);
+
+  var yaxis = d3.axisLeft().scale(yScale);
+  var xaxis = d3.axisBottom().scale(xScale);
+
+  function make_x_gridlines() {
+    return d3.axisBottom(xScale)
+      .ticks(5)
+  }
+
+  // gridlines in y axis function
+  function make_y_gridlines() {
+    return d3.axisLeft(yScale)
+      .ticks(5)
+  }
+
+
+  var svg = d3.select("#page-1-vis").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+      "translate(" + margin.left + "," + margin.top + ")");
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myXaxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xaxis);
+
+  svg.append("g")
+    .attr("class", "axis")
+    .attr("class", "myYaxis")
+    .call(yaxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("dy", ".75em")
+    .attr("y", 6)
+    .style("text-anchor", "end")
+    .text("Wins");
+  ;
+
+  var line = d3.line()
+    .x(function (d) {
+      return xScale(d.year);
+    })
+    .y(function (d) {
+      return !d.wins ? null : yScale(d.wins);
+    });
+
+
+  svg.append("g")
+    .attr("class", "grid")
+    .attr("transform", "translate(0," + height + ")")
+    .call(make_x_gridlines()
+      .tickSize(-height)
+      .tickFormat("")
+    );
+
+  // add the Y gridlines
+  svg.append("g")
+    .attr("class", "grid")
+    .call(make_y_gridlines()
+      .tickSize(-width)
+      .tickFormat("")
+    );
+
+  function gotoAllConstructors() {
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructors_histories.html");
+    window.location = redirectPath.join("/");
+  }
+
+  function gotoConstructor() {
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructor_drivers.html");
+    window.location = redirectPath.join("/") + `?c=${windowConstructorId}`;
+  }
+
+  async function loadAllData() {
+
+    if (!drivers) {
+      drivers = await d3.csv(csv_root + "/data/drivers.csv");
+      delete drivers.columns;
+    }
+    for (i = 0; i < drivers.length; i++) {
+      driverById[drivers[i].driverId] = drivers[i];
+    }
+    windowDriver = driverById[windowDriverId];
+    document.getElementById("page-title").innerHTML =
+      windowDriver.forename + ' ' + windowDriver.surname + "'s Victories at a Glance";
+
+    if (!constructors) {
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
+      delete constructors.columns;
+    }
+    for (i = 0; i < constructors.length; i++) {
+      constructorById[constructors[i].constructorId] = constructors[i];
+    }
+    windowConstructor = constructorById[windowConstructorId];
+
+
+    document.getElementById("nav-bar").innerHTML =
+      "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" +
+      "<a class='nav' onclick='gotoConstructor()'> " + windowConstructor.name + " 》</a>" +
+      windowDriver.surname;
+
+
+    if (!races) {
+      races = await d3.csv(csv_root + "/data/races.csv");
+      delete races.columns;
+    }
+
+
+    if (!results) {
+      results = await d3.csv(csv_root + "/data/results.csv");
+      delete results.columns;
+    }
+    results = results.filter(function (r) {
+      return r.driverId == windowDriverId;
+    });
+
+    for (i = 0; i < races.length; i++) {
+      raceById[races[i].raceId] = races[i];
+    }
+
+
+    for (i = 0; i < drivers.length; i++) {
+      driverById[drivers[i].driverId] = drivers[i];
+    }
+
+
+    for (i = 0; i < results.length; i++) {
+      let result = results[i];
+      console.log("result", result);
+      let race = raceById[result.raceId];
+      if (race) {
+        resultYear = race.year;
+        driverById[results[i].driverId].wins = driverById[result.driverId].wins || 0;
+        driverById[result.driverId].races = driverById[result.driverId].races || 0;
+        driverById[result.driverId].races += 1;
+        if (!driverById[result.driverId].years) {
+          driverById[result.driverId].years = []
+        }
+        if (driverById[result.driverId].years.indexOf(resultYear) == -1) {
+          driverById[result.driverId].years.push(resultYear);
+        }
+
+        if (result.position === "1") {
+          driverById[result.driverId].wins += 1;
+        }
+      }
+    }
+
+    loadPage1();
+  }
+
+  function loadPage1() {
+    page1DataByYear = {};
+    page1DataByDriver = {};
+    for (i = 0; i < results.length; i++) {
+      let result = results[i];
+      if (result['position'] === "1") {
+        let race = raceById[result.raceId];
+        if (!race) {
+          console.error("could not find race with ID ", result.raceId);
+        } else {
+          let resultYear = raceById[result.raceId].year;
+          // let driverName = driverById[result.driverId].name;
+          page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
+          page1DataByYear[resultYear][result.driverId] = page1DataByYear[resultYear][result.driverId] || 0;
+          page1DataByYear[resultYear][result.driverId] += 1
+        }
+      }
+    }
+
+    console.log("page1DataByYear", page1DataByYear);
+    for (year in page1DataByYear) {
+      for (driverId in page1DataByYear[year]) {
+        page1DataByDriver[driverId] = page1DataByDriver[driverId] || [];
+        page1DataByDriver[driverId].push({
+          year: year,
+          wins: page1DataByYear[year][driverId],
+          // cumulativeWins:
+        })
+      }
+    }
+
+    console.log("page1DataByDriver", page1DataByDriver);
+
+    // console.log("page1DataByDriver", page1DataByDriver);
+    yearlyWinData = [];
+    for (driverId in page1DataByDriver) {
+      yearlyWinData.push({
+          driverId: driverId,
+          values: page1DataByDriver[driverId]
+        }
+      )
+    }
+
+
+    // page1Data = [];
+
+    // console.log("page1Data", page1Data);
+
+    console.log("yearlyWinData", yearlyWinData);
+
+
+    // console.log("yearlyWinData", yearlyWinData);
+
+    cumulativeWinData = [];
+    cumulativeByDriver = {};
+    for (year in page1DataByYear) {
+      for (driverId in page1DataByYear[year]) {
+        cumulativeByDriver[driverId] = cumulativeByDriver[driverId] || {};
+        cumulativeByDriver[driverId]['so_far'] = cumulativeByDriver[driverId]['so_far'] || 0;
+        cumulativeByDriver[driverId]['so_far'] += +page1DataByYear[year][driverId];
+        cumulativeByDriver[driverId]['values'] = cumulativeByDriver[driverId]['values'] || []
+        cumulativeByDriver[driverId]['values'].push({
+          year: year,
+          wins: cumulativeByDriver[driverId]['so_far']
+        })
+
+      }
+
+    }
+
+    for (driverId in cumulativeByDriver) {
+      cumulativeWinData.push({
+          driverId: driverId,
+          values: cumulativeByDriver[driverId]['values']
+        }
+      )
+    }
+
+    console.log("cumulativeByDriver", cumulativeByDriver);
+
+
+    console.log("cumulativeWinData", cumulativeWinData);
+
+
+    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
+    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
+
+  }
+
+  // [
+  //   {
+  //    driverId: '51'
+  //    values: [
+  //      {'1950': 6}
+  //       {}
+  //    ]
+  //   }
+  // ]
+  function updateLineChart(formattedData, mouseHandlers) {
+    xScale.domain([
+      d3.min(formattedData, function (c) {
+        return d3.min(c.values, function (d) {
+          return d.year;
+        });
+      }),
+      d3.max(formattedData, function (c) {
+        return d3.max(c.values, function (d) {
+          return d.year;
+        });
+      })
+    ]);
+
+    yScale.domain([
+      0,
+      d3.max(formattedData, function (c) {
+        return d3.max(c.values, function (d) {
+          return d.wins + 4;
+        });
+      })
+    ]);
+    svg.selectAll(".myXaxis").transition()
+      .duration(500)
+      .call(xaxis);
+
+    svg.selectAll(".myYaxis")
+      .transition()
+      .duration(500)
+      .call(yaxis);
+
+    const lines = svg.selectAll("chartLine")
+      .data(formattedData)
+      .enter()
+      .append("g")
+      .attr("class", "chartLine-g")
+      .append("path")
+      .attr("class", "chartLine")
+      .attr("d", function (d) {
+        return line(d.values);
+      })
+      .attr("driver-id", function (d) {
+        return d.driverId;
+      })
+      .attr("stroke", function (d) {
+        return windowConstructor.color;
+      })
+      .attr("stroke-width", 3)
+    ;
+
+
+    lines
+      .merge(lines)
+      .transition()
+      .duration(1000);
+
+
+    lines.on("mouseover", mouseHandlers[0])
+      .on("mouseout", mouseHandlers[1]);
+  }
+
+
+  function handleMouseOver(d, i) {
+    document.getElementById('driver-detail').classList.remove('closed');
+    populateCurrentDriverTable(driverById[d.driverId]);
+  }
+
+  function populateCurrentDriverTable(selectedDriver) {
+    document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
+    document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
+    document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
+    document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
+    if (selectedDriver.years.length > 0) {
+      document.getElementById("td-driver-win-rate").innerHTML = (+selectedDriver.wins / +(selectedDriver.years.length)).toFixed(2);
+    }
+
+  }
+
+  function handleMouseOut(d, i) {
+    document.getElementById('driver-detail').classList.add('closed');
+    selectedDriver = null;
+    clearCurrentDriverTable();
+  }
+
+  function clearCurrentDriverTable() {
+    document.getElementById("td-driver-name").innerHTML = '';
+    document.getElementById("td-driver-nationality").innerHTML = '';
+    document.getElementById("td-driver-races").innerHTML = '';
+    document.getElementById("td-driver-wins").innerHTML = '';
+  }
+
+</script>

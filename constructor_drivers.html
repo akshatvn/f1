@@ -295,14 +295,10 @@
 
     console.log("cumulativeWinData", cumulativeWinData);
 
-    // window.setTimeout(function () {
-    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
-    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
-    // }, 5000)
 
-    // window.setTimeout(function () {
-    //   updateLineChart(yearlyWinData);
-    // }, 3000);
+    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
+    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+
   }
 
 
@@ -389,9 +385,16 @@
 
 
     lines.on("mouseover", mouseHandlers[0])
-      .on("mouseout", mouseHandlers[1]);
+      .on("mouseout", mouseHandlers[1])
+      .on("click", mouseHandlers[2]);
   }
 
+  function handleMouseClick(d, i) {
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("driver_history.html");
+    window.location = redirectPath.join("/") + `?d=${this.getAttribute("driver-id")}&c=${windowConstructorId}`;
+  }
 
   function handleMouseOver(d, i) {
     document.getElementById('driver-detail').classList.remove('closed');

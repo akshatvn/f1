@@ -35,12 +35,6 @@
   </div>
 </div>
 
-<div id="page-2" class="page">
-  <div id="page-2-vis"></div>
-</div>
-<div id="page-3" class="page">
-  <div id="page-3-vis"></div>
-</div>
 </body>
 
 <script id="page-1-script">
@@ -452,7 +446,6 @@
     let redirectPath = split_path.slice(0, split_path.length - 1);
     redirectPath.push("constructor_drivers.html");
     window.location = redirectPath.join("/") + `?c=${this.getAttribute("constructor-id")}`;
-
   }
 
   function handleMouseOver(d, i) {

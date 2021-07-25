@@ -72,6 +72,10 @@ path {
     cursor: pointer;
 }
 
+.nav:hover {
+    color: BLUE;
+}
+
 .overlay {
     fill: none;
     pointer-events: all;
