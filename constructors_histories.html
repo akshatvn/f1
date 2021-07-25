@@ -65,7 +65,7 @@
 
       // var x1 = d3.event.pageX - document.getElementById("page-1-svg").getBoundingClientRect().x + 10;
       // var y1 = d3.event.pageY - document.getElementById("page-1-svg").getBoundingClientRect().y + 10;
-      // console.log("x, y", x1,y1);
+      // // console.log("x, y", x1,y1);
 
     };
 
@@ -103,7 +103,7 @@
       var coordinates = d3.mouse(this);
       var x1 = coordinates[0];
       var y1 = coordinates[1];
-      console.log("x1,y1", x1, y1);
+      // console.log("x1,y1", x1, y1);
     });
 
     svg.append("g")
@@ -240,7 +240,7 @@
         }
       }
 
-      console.log("page1DataByYear", page1DataByYear);
+      // console.log("page1DataByYear", page1DataByYear);
       for (year in page1DataByYear) {
         for (constructorId in page1DataByYear[year]) {
           page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
@@ -252,9 +252,9 @@
         }
       }
 
-      console.log("page1DataByConstructor", page1DataByConstructor);
-
       // console.log("page1DataByConstructor", page1DataByConstructor);
+
+      // // console.log("page1DataByConstructor", page1DataByConstructor);
       yearlyWinData = [];
       for (constructorId in page1DataByConstructor) {
         yearlyWinData.push({
@@ -267,12 +267,12 @@
 
       // page1Data = [];
 
-      // console.log("page1Data", page1Data);
-
-      console.log("yearlyWinData", yearlyWinData);
-      // updateLineChart(yearlyWinData);
+      // // console.log("page1Data", page1Data);
 
       // console.log("yearlyWinData", yearlyWinData);
+      // updateLineChart(yearlyWinData);
+
+      // // console.log("yearlyWinData", yearlyWinData);
 
       cumulativeWinData = [];
       cumulativeByConstructor = {};
@@ -299,10 +299,10 @@
         )
       }
 
-      console.log("cumulativeByConstructor", cumulativeByConstructor);
+      // console.log("cumulativeByConstructor", cumulativeByConstructor);
 
 
-      console.log("cumulativeWinData", cumulativeWinData);
+      // console.log("cumulativeWinData", cumulativeWinData);
 
       // window.setTimeout(function () {
       updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
@@ -402,15 +402,15 @@
       //   //   return d.year;
       //   // }).left;
       //   // var x0 = xScale.invert(d3.mouse(this)[0]);
-      //   // console.log("x0", x0);
+      // //   // console.log("x0", x0);
       //   // var i = bisectDate(formattedData, x0, 1);
-      //   // console.log("i", i);
+      // //   // console.log("i", i);
       //   // var d0 = formattedData[i - 1];
-      //   // console.log("d0", d0);
+      // //   // console.log("d0", d0);
       //   // var d1 = formattedData[i];
-      //   // console.log("d1", d1);
+      // //   // console.log("d1", d1);
       //   // var d = x0 - d0.year > d1.year - x0 ? d1 : d0;
-      //   // console.log("d", d);
+      // //   // console.log("d", d);
       //   //
       //   // focus.attr("transform", "translate(" + xScale(d.year) + "," + yScale(d.wins) + ")");
       //   // focus.select(".tooltip-year").text((d.year));
@@ -457,12 +457,6 @@
         .call(makeAnnotations)
     }
 
-    function handleMouseClick(d, i) {
-      let split_path = window.location.pathname.split("/");
-      let redirectPath = split_path.slice(0, split_path.length - 1);
-      redirectPath.push("constructor_drivers.html");
-      window.location = redirectPath.join("/") + `?c=${this.getAttribute("constructor-id")}`;
-    }
 
     function handleMouseOver(d, i) {
       document.getElementById('constructor-detail').classList.remove('closed');
@@ -551,12 +545,12 @@
       contructor_wins[record.constructorId].bubbleRadius = contructor_wins[record.constructorId].wins;
     }
 
-    console.log("contructor_wins: ", contructor_wins);
+    // console.log("contructor_wins: ", contructor_wins);
     for (const constructorId in contructor_wins) {
       constructor_arr.push(contructor_wins[constructorId])
     }
     constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
-    console.log("constructor_arr: ", constructor_arr);
+    // console.log("constructor_arr: ", constructor_arr);
     display([], '#page-1-vis');
     display(constructor_arr, '#page-1-vis');
     document.getElementById('page-1').classList.toggle('closed');
@@ -642,7 +636,7 @@
         .append('circle')
         .classed('bubble', true)
         .attr('r', d => d.radius)
-        .attr('entity-id', d => d.entityId)
+        .attr('constructor-id', d => d.entityId)
         .attr('entity-type', d => d.entityType)
         .attr('fill', function (d) {
           if (!!d.color && d.color != "") {
@@ -654,7 +648,7 @@
         .attr('stroke-width', 1)
         .on("mouseover", handleMouseOverBubble)
         .on("mouseout", handleMouseOutBubble)
-        .on("click", handleMouseClickBubble);
+        .on("click", handleMouseClick);
 
       // labels
       labels = elements
@@ -721,39 +715,16 @@
 
   // Create Event Handlers for mouse
   function handleMouseOverBubble(d, i) {  // Add interactivity
-    if (this.getAttribute("entity-type") == "constructor") {
-      document.getElementById('constructor-detail').classList.toggle('closed');
-      selectedConstructor = constructor_arr.find(c => c.id == d.id);
-      populateCurrentConstructorTable(selectedConstructor);
-    } else if (this.getAttribute("entity-type") == "driver") {
-      document.getElementById('driver-detail').classList.toggle('closed');
-      selectedDriver = driver_arr.find(c => c.id == d.id);
-      populateCurrentDriverTable(selectedDriver);
-    } else if (this.getAttribute("entity-type") == "driver-year") {
-      document.getElementById('driver-year-detail').classList.toggle('closed');
-      populateCurrentDriverYearDetailTable(
-        d, {
-          constructorName: this.parentNode.getAttribute("data-constructor-name")
-        }
-      );
-    }
+    document.getElementById('constructor-detail').classList.toggle('closed');
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    populateCurrentConstructorTable(selectedConstructor);
     d3.select(this).attr("r", d.radius * 1.2);
   }
 
   function handleMouseOutBubble(d, i) {
-    if (this.getAttribute("entity-type") == "constructor") {
-      document.getElementById('constructor-detail').classList.toggle('closed');
-      selectedConstructor = null;
-      clearCurrentConstructorTable();
-    } else if (this.getAttribute("entity-type") == "driver") {
-      document.getElementById('driver-detail').classList.toggle('closed');
-      selectedDriver = null;
-      clearCurrentDriverTable();
-    } else if (this.getAttribute("entity-type") == "driver-year") {
-      document.getElementById('driver-year-detail').classList.toggle('closed');
-      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
-      clearCurrentDriverYearDetailTable();
-    }
+    document.getElementById('constructor-detail').classList.toggle('closed');
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
     d3.select(this).attr("r", d.radius);
   }
 
@@ -772,17 +743,10 @@
   }
 
   function handleMouseClickBubble(d, i) {
-    if (this.getAttribute("entity-type") == "constructor") {
-      selectedConstructor = constructor_arr.find(c => c.id == d.id);
-      console.log("selected constructor", selectedConstructor);
-      document.getElementById('page-1').classList.toggle('closed');
-      loadDriversPage(selectedConstructor);
-    } else if (this.getAttribute("entity-type") == "driver") {
-      selectedDriver = driver_arr.find(c => c.id == d.id);
-      console.log("selected driver", selectedDriver);
-      document.getElementById('page-2').classList.toggle('closed');
-      loadSingleDriverPage(selectedDriver, selectedConstructor);
-    }
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    // console.log("selected constructor", selectedConstructor);
+    document.getElementById('page-1').classList.toggle('closed');
+    handleMouseClick();
   }
 
   function toggleTimeline() {
@@ -792,5 +756,21 @@
     } else {
       window.location.reload();
     }
+  }
+
+  function handleMouseClick(d, i) {
+
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructor_drivers.html");
+    let basePath = redirectPath.join("/") + `?c=${this.getAttribute("constructor-id")}`
+    // if (document.getElementById("page-1-vis").getAttribute("current-view") == "timeline") {
+    window.location = basePath;
+    // } else {
+    //   if (document.getElementById("page-1-vis").getAttribute("current-view") == "timeline") {
+    //     window.location = basePath + '&b=1';
+    //   }
+    // }
+
   }
 </script>

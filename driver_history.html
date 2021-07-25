@@ -11,25 +11,16 @@
     <h3 id="page-title"></h3>
     <p>Hover over a driver's line for more details.</p>
   </div>
-  <div id="page-1-vis" class="float-container">
 
-    <div id="constructor-detail" class="custom-tooltip closed">
-      <table>
+  <div class="float-container" >
+    <div id="page-1-vis"></div>
+    <div id="driver-year-detail" class="float-child custom-tooltip closed">
+     <table>
         <tr>
-          <td>Constructor</td>
-          <td id="td-constructor-name" class="data"></td>
+          <td id="td-driver-year-wins" class="data"></td>
         </tr>
         <tr>
-          <td>Nationality</td>
-          <td id="td-constructor-nationality" class="data"></td>
-        </tr>
-        <tr>
-          <td>Total Races</td>
-          <td id="td-constructor-races" class="data"></td>
-        </tr>
-        <tr>
-          <td>Total Wins</td>
-          <td id="td-constructor-wins" class="data"></td>
+          <td id="td-driver-year-constructor" class="data"></td>
         </tr>
       </table>
     </div>
@@ -109,6 +100,7 @@
       constructorById[constructors[i].constructorId] = constructors[i];
     }
     windowConstructor = constructorById[windowConstructorId];
+
 
     populatePageTitle();
 
@@ -236,20 +228,20 @@
       .call(d3.axisBottom(x).tickSizeOuter(0))
       .call(g => g.append("text")
         .attr("x", width / 2)
-        .attr("y", margin.bottom )
+        .attr("y", margin.bottom)
         .attr("fill", "currentColor")
         .attr("text-anchor", "end")
         .text("Year"));
 
     var y = d3.scaleLinear()
-      .domain([0, maxPoints])
+      .domain([0, maxPoints + 1])
       .range([height, 0]);
 
     svg.append("g")
       .call(d3.axisLeft(y))
       .call(g => g.append("text")
         .attr("x", -20)
-        .attr("y", height/2)
+        .attr("y", height / 2)
         .attr("fill", "currentColor")
         .attr("text-anchor", "end")
         .text("Wins"));
@@ -328,11 +320,11 @@
       .enter().append("g")
       .attr("class", "legend")
       .attr("transform", function (d, i) {
-        return "translate("+ -width +"," + i * 19 + ")";
+        return "translate(" + -width + "," + i * 19 + ")";
       });
 
     legend.append("rect")
-      .attr("x", width+1)
+      .attr("x", width + 1)
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", function (d, i) {
@@ -352,32 +344,28 @@
 
 
   function handleMouseOver(d, i) {
-    document.getElementById('driver-detail').classList.remove('closed');
-    populateCurrentDriverTable(driverById[d.driverId]);
+    document.getElementById('driver-year-detail').classList.toggle('closed');
+    populateCurrentDriverYearDetailTable(
+      d, {
+        constructorName: this.parentNode.getAttribute("data-constructor-name")
+      }
+    );
   }
 
-  function populateCurrentDriverTable(selectedDriver) {
-    document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
-    document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
-    document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
-    document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
-    if (selectedDriver.years.length > 0) {
-      document.getElementById("td-driver-win-rate").innerHTML = (+selectedDriver.wins / +(selectedDriver.years.length)).toFixed(2);
-    }
+  function clearCurrentDriverYearDetailTable() {
+    document.getElementById('td-driver-year-wins').innerHTML = '';
+    document.getElementById('td-driver-year-constructor').innerHTML = '';
+  }
 
+  function populateCurrentDriverYearDetailTable(d, options) {
+    document.getElementById('td-driver-year-wins').innerHTML = d[1] - d[0];
+    document.getElementById('td-driver-year-constructor').innerHTML = options.constructorName;
   }
 
   function handleMouseOut(d, i) {
-    document.getElementById('driver-detail').classList.add('closed');
-    selectedDriver = null;
-    clearCurrentDriverTable();
-  }
-
-  function clearCurrentDriverTable() {
-    document.getElementById("td-driver-name").innerHTML = '';
-    document.getElementById("td-driver-nationality").innerHTML = '';
-    document.getElementById("td-driver-races").innerHTML = '';
-    document.getElementById("td-driver-wins").innerHTML = '';
+    document.getElementById('driver-year-detail').classList.toggle('closed');
+    // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
+    clearCurrentDriverYearDetailTable();
   }
 
 </script>
