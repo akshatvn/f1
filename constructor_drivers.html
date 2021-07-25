@@ -1,16 +1,22 @@
 <script src='https://d3js.org/d3.v5.min.js'></script>
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 
 <body onload="showTimeline()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 
 <div id="page-1" class="page">
-  <h3 id="nav-bar"></h3>
+
   <div id="page-1-description" class="page-description">
     <h2 id="page-title"></h2>
-    <p>Hover over a driver's line for more details. Click on it for drilling down</p>
+
   </div>
-  <a id="view-toggle-btn" class="nav" onclick="toggleTimeline()"></a>
+  <div id="nav-row">
+    <div id="nav-bar-wrap">
+      <h3 id="nav-bar"></h3>
+    </div>
+    <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
+  </div>
   <div id="page-1-vis-wrap" class="float-container">
     <div id="page-1-vis" class="float-container">
     </div>
@@ -38,12 +44,77 @@
         </tr>
       </table>
     </div>
+    <p>The greater the slope of a line, the more wins per year that driver has accumulated. Some drivers last long with
+      a few wins, while some continue winning regardless of streak. Hovering over the lines or bubbles gives some aggregated information about the driver. </p>
+    <p><span style="font-weight: bold">Nav Tip: </span>Click on a driver's mark to go to the next scene, specific to the chosen driver. Click on the breadcrumbs at the top of the page to go back to the previous scene</p>
   </div>
 </div>
 
 </body>
 
 <script id="page-1-script">
+  const annotations = {
+    '1': [
+      {
+        note: {
+          label: "None of McLaren's drivers have won less than a race a year after 1970",
+          title: "McLaren only got better..."
+        },
+        x: 271,
+        y: 426,
+        dx: -90,
+        dy: -70
+      },
+      {
+        note: {
+          label: "Not a single victory for McLaren after Hamilton left",
+          title: "...until Lewis left"
+        },
+        x: 745,
+        y: 210,
+        dx: -13,
+        dy: -38
+      }
+    ],
+    '6': [
+      {
+        note: {
+          label: "Michael Schumacher towering above the rest in both wins and rate of wins",
+          title: "It wasn't the car, it was the man"
+        },
+        x: 641,
+        y: 107,
+        dx: -346,
+        dy: 12
+
+      }
+    ],
+    '9': [
+      {
+        note: {
+          label: "In terms of victories per year",
+           title: "Vettel was an outlier"
+        },
+        x: 749,
+        y: 124,
+        dx: -148,
+        dy: 40
+      }
+    ],
+    '131': [
+      {
+        note: {
+          label: "Mercedes did not compete from 1956 to 2009",
+          title: "How come no wins for Merc?"
+        },
+        x: 704,
+        y: 433,
+        dx: -520,
+        dy: -1
+      }
+    ]
+  };
+
   function getQueryStringValue(key) {
     return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
   }
@@ -74,6 +145,9 @@
       tooltips[i].style.top = y;
       tooltips[i].style.left = x;
     }
+    // var x1 = d3.event.pageX - document.getElementById("page-1-svg").getBoundingClientRect().x + 10;
+    //   var y1 = d3.event.pageY - document.getElementById("page-1-svg").getBoundingClientRect().y + 10;
+    //   console.log("x, y", x1,y1);
   };
 
   function showTimeline() {
@@ -102,11 +176,19 @@
 
 
     var svg = d3.select("#page-1-vis").append("svg")
+      .attr("id", "page-1-svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform",
         "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.on("mouseover", function () {
+      var coordinates = d3.mouse(this);
+      var x1 = coordinates[0];
+      var y1 = coordinates[1];
+      console.log("x1,y1", x1, y1);
+    });
     svg.append("g")
       .attr("class", "axis")
       .attr("class", "myXaxis")
@@ -326,17 +408,17 @@
     //   }
     // ]
     function updateLineChart(formattedData, mouseHandlers) {
-      xScale.domain([
-        d3.min(formattedData, function (c) {
-          return d3.min(c.values, function (d) {
-            return d.year;
-          });
-        }),
-        d3.max(formattedData, function (c) {
-          return d3.max(c.values, function (d) {
-            return d.year;
-          });
-        })
+      xScale.domain([ 1950, 2020
+        // d3.min(formattedData, function (c) {
+        //   return d3.min(c.values, function (d) {
+        //     return d.year - 1;
+        //   });
+        // }),
+        // d3.max(formattedData, function (c) {
+        //   return d3.max(c.values, function (d) {
+        //     return d.year;
+        //   });
+        // })
       ]);
 
       yScale.domain([
@@ -399,6 +481,14 @@
       lines.on("mouseover", mouseHandlers[0])
         .on("mouseout", mouseHandlers[1])
         .on("click", mouseHandlers[2]);
+
+
+      const makeAnnotations = d3.annotation()
+        // .editMode(true)
+        .annotations(annotations[windowConstructorId]);
+      svg
+        .append("g")
+        .call(makeAnnotations)
     }
 
 
@@ -575,8 +665,8 @@
   }
 
   function bubbleChart(visId) {
-    const width = window.innerWidth * 0.8;
-    const height = window.innerHeight * 0.8;
+    const width = 960;
+    const height = 500;
 
     let forceStrength = 0.04; // magic number
 
@@ -640,8 +730,8 @@
       // create svg element inside provided selector
       svg = d3.select(selector)
         .append('svg')
-        .attr('width', 0.9 * width)
-        .attr('height', 0.9 * height)
+        .attr('width', width)
+        .attr('height', height)
         .attr('style', 'backgound: lightgray;');
 
       // bind nodes data to circle elements
@@ -763,7 +853,6 @@
     clearCurrentDriverTable();
     d3.select(this).attr("r", d.radius);
   }
-
 
 
   function toggleTimeline() {

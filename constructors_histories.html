@@ -9,10 +9,12 @@
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page">
   <div id="page-1-description" class="page-description">
-    <h3>All Constructors By Race Victories</h3>
-    <p>Hover over a constructor's line for more details. Click on it for drilling down</p>
+    <h3>All Constructors By Cumulative Race Victories</h3>
+
   </div>
-  <a id="view-toggle-btn" class="nav" onclick="toggleTimeline()"></a>
+  <div id="nav-row">
+    <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
+  </div>
   <div id="page-1-vis-wrap" class="float-container">
     <div id="page-1-vis">
     </div>
@@ -36,6 +38,10 @@
         </tr>
       </table>
     </div>
+    <p>Hover over a constructor's mark for more details. Click on it for drilling down</p>
+    <p>This scene is an overview of all F1 constructors' cumulative win histories plotted as lines. The lines discontinue if there were no more victories for that constructor, irrespective of whether they participated or not. </p>
+    <p>Hovering over the lines or bubbles gives some aggregated information about the constructor.</p>
+    <p><span style="font-weight: bold">Nav Tip: </span>Click on a constructor's mark to go to the next scene, specific to the chosen constructor.</p>
   </div>
 </div>
 
@@ -385,46 +391,16 @@
         .on("mouseout", mouseHandlers[1])
         .on("click", mouseHandlers[2]);
 
-      // svg.append("rect")
-      //   .attr("class", "overlay")
-      //   .attr("width", width)
-      //   .attr("height", height)
-      //   .on("mouseover", function () {
-      //     focus.style("display", null);
-      //   })
-      //   .on("mouseout", function () {
-      //     focus.style("display", "none");
-      //   })
-      //   .on("mousemove", mousemove);
 
-      // function mousemove() {
-      //   // var bisectDate = d3.bisector(function (d) {
-      //   //   return d.year;
-      //   // }).left;
-      //   // var x0 = xScale.invert(d3.mouse(this)[0]);
-      // //   // console.log("x0", x0);
-      //   // var i = bisectDate(formattedData, x0, 1);
-      // //   // console.log("i", i);
-      //   // var d0 = formattedData[i - 1];
-      // //   // console.log("d0", d0);
-      //   // var d1 = formattedData[i];
-      // //   // console.log("d1", d1);
-      //   // var d = x0 - d0.year > d1.year - x0 ? d1 : d0;
-      // //   // console.log("d", d);
-      //   //
-      //   // focus.attr("transform", "translate(" + xScale(d.year) + "," + yScale(d.wins) + ")");
-      //   // focus.select(".tooltip-year").text((d.year));
-      //   // focus.select(".tooltip-wins").text((d.wins));
-      // }
       const annotations = [
         {
           note: {
-            label: "Just before Shumacher joined",
+            label: "Just before Shumacher joined, McLaren came this close to overtaking Ferrari",
             title: "Ferrari's slowest years"
           },
           x: 536,
           y: 254,
-          dy: -100,
+          dy: -70,
           dx: -100
         },
         {
@@ -448,7 +424,6 @@
         }
       ];
 
-      // Add annotation to the chart
       const makeAnnotations = d3.annotation()
       // .editMode(true)
         .annotations(annotations);
@@ -557,8 +532,8 @@
   }
 
   function bubbleChart(visId) {
-    const width = window.innerWidth * 0.8;
-    const height = window.innerHeight * 0.8;
+    const width = 960;
+    const height = 500;
 
     let forceStrength = 0.04; // magic number
 
@@ -622,8 +597,8 @@
       // create svg element inside provided selector
       svg = d3.select(selector)
         .append('svg')
-        .attr('width', 0.9 * width)
-        .attr('height', 0.9 * height)
+        .attr('width',  width)
+        .attr('height',  height)
         .attr('style', 'backgound: lightgray;');
 
       // bind nodes data to circle elements
