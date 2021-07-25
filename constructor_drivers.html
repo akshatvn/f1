@@ -3,6 +3,7 @@
 
 <body onload="loadAllData()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
+
 <div id="page-1" class="page">
   <h3 id="nav-bar"></h3>
   <div id="page-1-description" class="page-description">
@@ -66,7 +67,7 @@
     }
   };
 
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+  var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -98,18 +99,25 @@
     .attr("class", "axis")
     .attr("class", "myXaxis")
     .attr("transform", "translate(0," + height + ")")
-    .call(xaxis);
+    .call(xaxis)
+    .call(g => g.append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.bottom)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Year"));
+  ;
 
   svg.append("g")
     .attr("class", "axis")
     .attr("class", "myYaxis")
     .call(yaxis)
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("dy", ".75em")
-    .attr("y", 6)
-    .style("text-anchor", "end")
-    .text("Wins");
+    .call(g => g.append("text")
+      .attr("x", -40)
+      .attr("y", height / 2)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Wins"));
 
 
   var line = d3.line()
@@ -188,7 +196,7 @@
 
 
     for (i = 0; i < results.length; i++) {
-      let result =  results[i];
+      let result = results[i];
       console.log("result", result);
       let race = raceById[result.raceId];
       if (race) {

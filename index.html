@@ -354,8 +354,8 @@
       .attr("height", function (d) {
         return y(d[0]) - y(d[1]);
       })
-      .on("mouseover", handleMouseOver)
-      .on("mouseout", handleMouseOut);
+      .on("mouseover", handleMouseOverBubble)
+      .on("mouseout", handleMouseOutBubble);
 
     var legend = svg.selectAll(".legend")
       .data(colors)
@@ -638,8 +638,8 @@
         })
         .attr('stroke', d => invertColor(d.color))
         .attr('stroke-width', 1)
-        .on("mouseover", handleMouseOver)
-        .on("mouseout", handleMouseOut)
+        .on("mouseover", handleMouseOverBubble)
+        .on("mouseout", handleMouseOutBubble)
         .on("click", handleMouseClickBubble);
 
       // labels
@@ -706,7 +706,7 @@
 
 
   // Create Event Handlers for mouse
-  function handleMouseOver(d, i) {  // Add interactivity
+  function handleMouseOverBubble(d, i) {  // Add interactivity
     if (this.getAttribute("entity-type") == "constructor") {
       document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = constructor_arr.find(c => c.id == d.id);
@@ -726,7 +726,7 @@
     d3.select(this).attr("r", d.radius * 1.2);
   }
 
-  function handleMouseOut(d, i) {
+  function handleMouseOutBubble(d, i) {
     if (this.getAttribute("entity-type") == "constructor") {
       document.getElementById('constructor-detail').classList.toggle('closed');
       selectedConstructor = null;

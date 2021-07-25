@@ -213,7 +213,7 @@
   function updateBarChart(options) {
     const {chartData, color, allConstructors, chartYears, maxPoints, colorMap, colors} = options;
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    var margin = {top: 20, right: 20, bottom: 30, left: 100},
       width = 960 - margin.left - margin.right,
       height = 500 - margin.top - margin.bottom;
 
@@ -236,7 +236,7 @@
       .call(d3.axisBottom(x).tickSizeOuter(0))
       .call(g => g.append("text")
         .attr("x", width / 2)
-        .attr("y", margin.bottom / 4)
+        .attr("y", margin.bottom )
         .attr("fill", "currentColor")
         .attr("text-anchor", "end")
         .text("Year"));
@@ -248,8 +248,8 @@
     svg.append("g")
       .call(d3.axisLeft(y))
       .call(g => g.append("text")
-        .attr("x", -height / 8)
-        .attr("y", width / 3)
+        .attr("x", -20)
+        .attr("y", height/2)
         .attr("fill", "currentColor")
         .attr("text-anchor", "end")
         .text("Wins"));

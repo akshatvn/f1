@@ -59,7 +59,7 @@
 
   };
 
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+  var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -100,19 +100,25 @@
     .attr("class", "axis")
     .attr("class", "myXaxis")
     .attr("transform", "translate(0," + height + ")")
-    .call(xaxis);
+    .call(xaxis)
+    .call(g => g.append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.bottom)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Year"));
 
   svg.append("g")
     .attr("class", "axis")
     .attr("class", "myYaxis")
     .call(yaxis)
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("dy", ".75em")
-    .attr("y", 6)
-    .style("text-anchor", "end")
-    .text("Wins");
-  ;
+    .call(g => g.append("text")
+      .attr("x", -40)
+      .attr("y", height / 2)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "end")
+      .text("Wins"));
+
 
   var line = d3.line()
     .x(function (d) {
@@ -202,10 +208,10 @@
       }
     }
 
-    loadPage1();
+    loadPage1Timeline();
   }
 
-  function loadPage1() {
+  function loadPage1Timeline() {
     page1DataByYear = {};
     page1DataByConstructor = {};
     for (i = 0; i < results.length; i++) {
@@ -416,7 +422,7 @@
           label: "More than 10 wins every year since 2014!",
           title: "Mercedes is back"
         },
-        x: 800,
+        x: 750,
         y: 428,
         dy: -60,
         dx: -40
@@ -425,7 +431,7 @@
         note: {
           title: "Vettel quits red bull"
         },
-        x: 804,
+        x: 765,
         y: 362,
         dy: -140,
         dx: -10
@@ -434,7 +440,7 @@
 
 // Add annotation to the chart
     const makeAnnotations = d3.annotation()
-      // .editMode(true)
+    // .editMode(true)
       .annotations(annotations);
     svg
       .append("g")
@@ -471,5 +477,272 @@
     document.getElementById("td-constructor-nationality").innerHTML = '';
     document.getElementById("td-constructor-races").innerHTML = '';
     document.getElementById("td-constructor-wins").innerHTML = '';
+  }
+
+  async function loadConstructorsPage() {
+
+    if (!constructors) {
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
+      delete constructors.columns;
+    }
+
+    if (!races) {
+      races = await d3.csv(csv_root + "/data/races.csv");
+      delete races.columns;
+    }
+
+
+    if (!results) {
+      results = await d3.csv(csv_root + "/data/results.csv");
+      delete results.columns;
+    }
+
+    // console.log("constructors", constructors);
+
+
+    contructor_wins = {};
+    for (i = 0; i < results.length; i++) {
+      let record = results[i];
+      if (!contructor_wins[record.constructorId]) {
+        let currentConstructor = constructors.find(c => c.constructorId == record.constructorId)
+        contructor_wins[record.constructorId] = {
+          id: record.constructorId,
+          entityId: record.constructorId,
+          entityType: "constructor",
+          name: (currentConstructor).name,
+          wins: 0,
+          races: 0,
+          nationality: currentConstructor.nationality,
+          color: (currentConstructor).color,
+          driver_ids: [],
+          bubbleRadius: 0
+        }
+      }
+      if (record.position === "1") {
+        contructor_wins[record.constructorId].wins += 1;
+
+      }
+      contructor_wins[record.constructorId].races += 1;
+      contructor_wins[record.constructorId].bubbleRadius = contructor_wins[record.constructorId].wins;
+    }
+
+    console.log("contructor_wins: ", contructor_wins);
+    for (const constructorId in contructor_wins) {
+      constructor_arr.push(contructor_wins[constructorId])
+    }
+    constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
+    console.log("constructor_arr: ", constructor_arr);
+
+    display(constructor_arr, '#vis-all-constructors');
+    document.getElementById('page-1').classList.toggle('closed');
+  }
+
+  function bubbleChart(visId) {
+    const width = window.innerWidth * 0.8;
+    const height = window.innerHeight * 0.8;
+
+    let forceStrength = 0.04; // magic number
+
+    const center = {x: width / 2, y: height / 2};
+
+    let svg = null;
+    let bubbles = null;
+    let labels = null;
+    let nodes = [];
+
+    let simulation = d3.forceSimulation()
+      .force('charge', d3.forceManyBody().strength(d => Math.pow(d.radius, 2.0) * 0.04))
+      .force('x', d3.forceX().strength(forceStrength).x(center.x))
+      .force('y', d3.forceY().strength(forceStrength).y(center.y))
+      .force('center', d3.forceCenter(center.x, center.y));
+
+    // .force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+
+    if (visId == '#vis-constructor-drivers') {
+      window.setTimeout(function () {
+        simulation =
+          simulation.force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+      }, 500);
+    } else {
+      simulation =
+        simulation.force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+    }
+
+
+    function createNodes(rawData) {
+      // if (ignoreZeros) {
+      rawData = rawData.filter(d => d.wins > 0);
+      // }
+
+      const maxSize = d3.max(rawData, d => 4 + (+d.wins) * 5);
+
+      const radiusScale = d3.scaleSqrt()
+        .domain([0, maxSize])
+        .range([0, height / 9]);
+
+      const myNodes = rawData.map(d => ({
+        ...d,
+        radius: radiusScale(4 + (+d.wins) * 5),
+        minYear: d.minYear,
+        // size: +d.wins,
+        x: (Math.random() - 0.5) * width,
+        y: (Math.random() - 0.5) * height
+      }));
+
+      return myNodes;
+    }
+
+    // main entry point to bubble chart, returned by parent closure
+    // prepares rawData for visualisation and adds an svg element to the provided selector and starts the visualisation process
+    let chart = function chart(selector, rawData) {
+      // convert raw data into nodes data
+      nodes = createNodes(rawData);
+
+      d3.select(selector).select('svg').remove();
+
+      // create svg element inside provided selector
+      svg = d3.select(selector)
+        .append('svg')
+        .attr('width', 0.9 * width)
+        .attr('height', 0.9 * height)
+        .attr('style', 'backgound: lightgray;');
+
+      // bind nodes data to circle elements
+      const elements = svg.selectAll('.bubble')
+        .data(nodes, d => d.id)
+        .enter()
+        .append('g');
+
+      bubbles = elements
+        .append('circle')
+        .classed('bubble', true)
+        .attr('r', d => d.radius)
+        .attr('entity-id', d => d.entityId)
+        .attr('entity-type', d => d.entityType)
+        .attr('fill', function (d) {
+          if (!!d.color && d.color != "") {
+            return d.color;
+          }
+          return defaultConstructorColor;
+        })
+        .attr('stroke', d => invertColor(d.color))
+        .attr('stroke-width', 1)
+        .on("mouseover", handleMouseOverBubble)
+        .on("mouseout", handleMouseOutBubble)
+        .on("click", handleMouseClickBubble);
+
+      // labels
+      labels = elements
+        .append('text')
+        .attr('constructor-id', d => d.id)
+        .classed('bubble-label', true)
+        .attr('dy', '.3em')
+        .attr('id', d => "bubble-label-" + d.id)
+        .style('text-anchor', 'middle')
+        .style('font-size', 12)
+        .style('fill', d => invertColor(d.color))
+        .text(d => d.wins > 45 ? d.name + ": " + d.wins : "");
+
+      simulation.nodes(nodes)
+        .on('tick', ticked)
+        .restart();
+    };
+
+    function ticked() {
+      bubbles
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+
+      labels
+        .attr('x', d => d.x)
+        .attr('y', d => d.y);
+    }
+
+    // return chart function from closure
+    return chart;
+  }
+
+  function display(data, visId) {
+    let myBubbleChart = bubbleChart(visId);
+    myBubbleChart(visId, data);
+  }
+
+  // function to find color of font to be written on top of bubble (for contrast)
+  function invertColor(hex) {
+    function padZero(str, len) {
+      len = len || 2;
+      var zeros = new Array(len).join('0');
+      return (zeros + str).slice(-len);
+    }
+
+    if (!hex) {
+      hex = defaultConstructorColor;
+    }
+    if (hex.indexOf('#') === 0) {
+      hex = hex.slice(1);
+    }
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length !== 6) {
+      hex = defaultConstructorColor;
+    }
+    var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
+      g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
+      b = (255 - parseInt(hex.slice(4, 6), 16)).toString(16);
+    return '#' + padZero(r) + padZero(g) + padZero(b);
+  }
+
+
+  // Create Event Handlers for mouse
+  function handleMouseOverBubble(d, i) {  // Add interactivity
+    if (this.getAttribute("entity-type") == "constructor") {
+      document.getElementById('constructor-detail').classList.toggle('closed');
+      selectedConstructor = constructor_arr.find(c => c.id == d.id);
+      populateCurrentConstructorTable(selectedConstructor);
+    } else if (this.getAttribute("entity-type") == "driver") {
+      document.getElementById('driver-detail').classList.toggle('closed');
+      selectedDriver = driver_arr.find(c => c.id == d.id);
+      populateCurrentDriverTable(selectedDriver);
+    } else if (this.getAttribute("entity-type") == "driver-year") {
+      document.getElementById('driver-year-detail').classList.toggle('closed');
+      populateCurrentDriverYearDetailTable(
+        d, {
+          constructorName: this.parentNode.getAttribute("data-constructor-name")
+        }
+      );
+    }
+    d3.select(this).attr("r", d.radius * 1.2);
+  }
+
+  function handleMouseOutBubble(d, i) {
+    if (this.getAttribute("entity-type") == "constructor") {
+      document.getElementById('constructor-detail').classList.toggle('closed');
+      selectedConstructor = null;
+      clearCurrentConstructorTable();
+    } else if (this.getAttribute("entity-type") == "driver") {
+      document.getElementById('driver-detail').classList.toggle('closed');
+      selectedDriver = null;
+      clearCurrentDriverTable();
+    } else if (this.getAttribute("entity-type") == "driver-year") {
+      document.getElementById('driver-year-detail').classList.toggle('closed');
+      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
+      clearCurrentDriverYearDetailTable();
+    }
+    d3.select(this).attr("r", d.radius);
+  }
+
+  function handleMouseClickBubble(d, i) {
+    if (this.getAttribute("entity-type") == "constructor") {
+      selectedConstructor = constructor_arr.find(c => c.id == d.id);
+      console.log("selected constructor", selectedConstructor);
+      document.getElementById('page-1').classList.toggle('closed');
+      loadDriversPage(selectedConstructor);
+    } else if (this.getAttribute("entity-type") == "driver") {
+      selectedDriver = driver_arr.find(c => c.id == d.id);
+      console.log("selected driver", selectedDriver);
+      document.getElementById('page-2').classList.toggle('closed');
+      loadSingleDriverPage(selectedDriver, selectedConstructor);
+    }
   }
 </script>
