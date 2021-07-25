@@ -103,11 +103,15 @@ path {
 }
 
 #view-toggle-btn {
-    position:absolute;
-    right:10%;
+    position: absolute;
+    right: 10%;
     color: red;
 }
 
 #view-toggle-btn:hover {
     color: darkblue;
+}
+
+.bubble {
+    cursor: pointer;
 }

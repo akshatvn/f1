@@ -371,7 +371,7 @@
         .attr("stroke", function (d) {
           return constructorById[d.constructorId].color;
         })
-        .attr("stroke-width", 3);
+        .attr("stroke-width", 4);
       ;
 
 
@@ -419,7 +419,7 @@
       const annotations = [
         {
           note: {
-            label: "Just before Shumacher came in",
+            label: "Just before Shumacher joined",
             title: "Ferrari's slowest years"
           },
           x: 536,
@@ -443,12 +443,12 @@
           },
           x: 765,
           y: 362,
-          dy: -140,
+          dy: -120,
           dx: -10
         }
       ];
 
-// Add annotation to the chart
+      // Add annotation to the chart
       const makeAnnotations = d3.annotation()
       // .editMode(true)
         .annotations(annotations);

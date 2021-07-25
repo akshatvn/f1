@@ -56,7 +56,7 @@
   }
 
   // Would write the value of the QueryString-variable called name to the console
-  console.log("currentConstructor", getQueryStringValue("c"));
+  // console.log("currentConstructor", getQueryStringValue("c"));
   var windowConstructorId = getQueryStringValue("c");
   var windowConstructor;
   var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
@@ -203,7 +203,7 @@
 
       for (i = 0; i < results.length; i++) {
         let result = results[i];
-        console.log("result", result);
+        // console.log("result", result);
         let race = raceById[result.raceId];
         if (race) {
           resultYear = race.year;
@@ -245,7 +245,7 @@
         }
       }
 
-      console.log("page1DataByYear", page1DataByYear);
+      // console.log("page1DataByYear", page1DataByYear);
       for (year in page1DataByYear) {
         for (driverId in page1DataByYear[year]) {
           page1DataByDriver[driverId] = page1DataByDriver[driverId] || [];
@@ -257,9 +257,9 @@
         }
       }
 
-      console.log("page1DataByDriver", page1DataByDriver);
-
       // console.log("page1DataByDriver", page1DataByDriver);
+
+      // // console.log("page1DataByDriver", page1DataByDriver);
       yearlyWinData = [];
       for (driverId in page1DataByDriver) {
         yearlyWinData.push({
@@ -272,12 +272,12 @@
 
       // page1Data = [];
 
-      // console.log("page1Data", page1Data);
-
-      console.log("yearlyWinData", yearlyWinData);
-
+      // // console.log("page1Data", page1Data);
 
       // console.log("yearlyWinData", yearlyWinData);
+
+
+      // // console.log("yearlyWinData", yearlyWinData);
 
       cumulativeWinData = [];
       cumulativeByDriver = {};
@@ -304,10 +304,10 @@
         )
       }
 
-      console.log("cumulativeByDriver", cumulativeByDriver);
+      // console.log("cumulativeByDriver", cumulativeByDriver);
 
 
-      console.log("cumulativeWinData", cumulativeWinData);
+      // console.log("cumulativeWinData", cumulativeWinData);
 
 
       // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
@@ -372,13 +372,12 @@
         .attr("stroke", function (d) {
           return windowConstructor.color;
         })
-        .attr("stroke-width", 3)
+        .attr("stroke-width", 4)
       ;
 
       svg.selectAll(".chartLine-g")
         .append("text")
         .data(formattedData)
-        // .text("something")
         .text(function (d) {
           if (d.values.length > 2 && d.values[d.values.length - 1].wins > 10) {
             return driverById[d.driverId].surname;
@@ -391,7 +390,6 @@
           return yScale(d.values[d.values.length - 1].wins);
         });
 
-
       lines
         .merge(lines)
         .transition()
@@ -403,28 +401,12 @@
         .on("click", mouseHandlers[2]);
     }
 
-    function handleMouseClick(d, i) {
-      let split_path = window.location.pathname.split("/");
-      let redirectPath = split_path.slice(0, split_path.length - 1);
-      redirectPath.push("driver_history.html");
-      window.location = redirectPath.join("/") + `?d=${this.getAttribute("driver-id")}&c=${windowConstructorId}`;
-    }
 
     function handleMouseOver(d, i) {
       document.getElementById('driver-detail').classList.remove('closed');
       populateCurrentDriverTable(driverById[d.driverId]);
     }
 
-    function populateCurrentDriverTable(selectedDriver) {
-      document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
-      document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
-      document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
-      document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
-      if (selectedDriver.years.length > 0) {
-        document.getElementById("td-driver-win-rate").innerHTML = (+selectedDriver.wins / +(selectedDriver.years.length)).toFixed(2);
-      }
-
-    }
 
     function handleMouseOut(d, i) {
       document.getElementById('driver-detail').classList.add('closed');
@@ -432,12 +414,6 @@
       clearCurrentDriverTable();
     }
 
-    function clearCurrentDriverTable() {
-      document.getElementById("td-driver-name").innerHTML = '';
-      document.getElementById("td-driver-nationality").innerHTML = '';
-      document.getElementById("td-driver-races").innerHTML = '';
-      document.getElementById("td-driver-wins").innerHTML = '';
-    }
 
     loadAllData();
   }
@@ -476,7 +452,7 @@
     windowConstructor = constructorById[windowConstructorId];
     selectedConstructor = windowConstructor;
 
-    // console.log("constructors", constructors);
+    // // console.log("constructors", constructors);
 
 
     contructor_wins = {};
@@ -505,32 +481,33 @@
       contructor_wins[record.constructorId].bubbleRadius = contructor_wins[record.constructorId].wins;
     }
 
-    console.log("contructor_wins: ", contructor_wins);
+    // console.log("contructor_wins: ", contructor_wins);
     for (const constructorId in contructor_wins) {
       constructor_arr.push(contructor_wins[constructorId])
     }
     constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
-    console.log("constructor_arr: ", constructor_arr);
+    // console.log("constructor_arr: ", constructor_arr);
     driver_arr = [];
     if (!drivers) {
       drivers = await d3.csv(csv_root + "/data/drivers.csv")
       delete drivers.columns;
     }
-    console.log("drivers", drivers);
+    // console.log("drivers", drivers);
 
     if (!results) {
       results = await d3.csv(csv_root + "/data/results.csv");
       delete results.columns;
     }
-    // console.log("results", results);
+    // // console.log("results", results);
     // document.getElementById('page-2-title').innerHTML = "<a class='nav' onclick='gotoPage1()'> All Constructors 》</a>" + selectedConstructor.name;
     // document.getElementById('page-2-description').innerHTML = "<h3> Top " + selectedConstructor.name + " Drivers </h3>"
     // document.getElementById('wins-for-con').innerHTML = "Wins for " + selectedConstructor.name;
 
     // document.getElementById('points-for-con').innerHTML = "Points for " + selectedConstructor.name;
 
-    const usefulResults = results.filter(result => result.constructorId == selectedConstructor.id);
-    console.log("usefulResults", usefulResults);
+    // console.log("selectedConstructor", selectedConstructor);
+    const usefulResults = results.filter(result => result.constructorId == selectedConstructor.constructorId);
+    // console.log("usefulResults", usefulResults);
 
     let usefulDrivers = [];
     let addedDriverIds = [];
@@ -546,7 +523,7 @@
         driver = null
       }
     }
-    console.log("usefulDrivers", usefulDrivers);
+    // console.log("usefulDrivers", usefulDrivers);
     var driverWins = {};
     for (i = 0; i < usefulResults.length; i++) {
       let record = usefulResults[i];
@@ -585,13 +562,13 @@
 
       driverWins[record.driverId].races += 1;
     }
-    console.log("driverWins", driverWins);
+    // console.log("driverWins", driverWins);
 
     for (const driverId in driverWins) {
       driver_arr.push(driverWins[driverId])
     }
     driver_arr = driver_arr.sort((a, b) => a.wins < b.wins ? 1 : -1);
-    console.log("driver_arr: ", driver_arr);
+    // console.log("driver_arr: ", driver_arr);
     // display([], '#page-1-vis');
     display(driver_arr, '#page-1-vis');
     document.getElementById('page-1').classList.toggle('closed');
@@ -677,7 +654,7 @@
         .append('circle')
         .classed('bubble', true)
         .attr('r', d => d.radius)
-        .attr('entity-id', d => d.entityId)
+        .attr('driver-id', d => d.entityId)
         .attr('entity-type', d => d.entityType)
         .attr('fill', function (d) {
           if (!!d.color && d.color != "") {
@@ -689,7 +666,7 @@
         .attr('stroke-width', 1)
         .on("mouseover", handleMouseOverBubble)
         .on("mouseout", handleMouseOutBubble)
-        .on("click", handleMouseClickBubble);
+        .on("click", handleMouseClick);
 
       // labels
       labels = elements
@@ -701,7 +678,7 @@
         .style('text-anchor', 'middle')
         .style('font-size', 12)
         .style('fill', d => invertColor(d.color))
-        .text(d => d.wins > 45 ? d.name + ": " + d.wins : "");
+        .text(d => d.wins >= 20 ? d.name + ": " + d.wins : d.wins);
 
       simulation.nodes(nodes)
         .on('tick', ticked)
@@ -753,72 +730,40 @@
     return '#' + padZero(r) + padZero(g) + padZero(b);
   }
 
+  function populateCurrentDriverTable(selectedDriver) {
+    document.getElementById("td-driver-name").innerHTML = selectedDriver.forename + ' ' + selectedDriver.surname;
+    document.getElementById("td-driver-nationality").innerHTML = selectedDriver.nationality;
+    document.getElementById("td-driver-races").innerHTML = selectedDriver.races;
+    document.getElementById("td-driver-wins").innerHTML = selectedDriver.wins;
+    if (selectedDriver.years.length > 0) {
+      document.getElementById("td-driver-win-rate").innerHTML = (+selectedDriver.wins / +(selectedDriver.years.length)).toFixed(2);
+    }
+
+  }
+
+
+  function clearCurrentDriverTable() {
+    document.getElementById("td-driver-name").innerHTML = '';
+    document.getElementById("td-driver-nationality").innerHTML = '';
+    document.getElementById("td-driver-races").innerHTML = '';
+    document.getElementById("td-driver-wins").innerHTML = '';
+  }
+
 
   // Create Event Handlers for mouse
-  function handleMouseOverBubble(d, i) {  // Add interactivity
-    if (this.getAttribute("entity-type") == "constructor") {
-      document.getElementById('constructor-detail').classList.toggle('closed');
-      selectedConstructor = constructor_arr.find(c => c.id == d.id);
-      populateCurrentConstructorTable(selectedConstructor);
-    } else if (this.getAttribute("entity-type") == "driver") {
-      document.getElementById('driver-detail').classList.toggle('closed');
-      selectedDriver = driver_arr.find(c => c.id == d.id);
-      populateCurrentDriverTable(selectedDriver);
-    } else if (this.getAttribute("entity-type") == "driver-year") {
-      document.getElementById('driver-year-detail').classList.toggle('closed');
-      populateCurrentDriverYearDetailTable(
-        d, {
-          constructorName: this.parentNode.getAttribute("data-constructor-name")
-        }
-      );
-    }
+  function handleMouseOverBubble(d, i) {
+    document.getElementById('driver-detail').classList.toggle('closed');
+    populateCurrentDriverTable(driverById[d.id]);
     d3.select(this).attr("r", d.radius * 1.2);
   }
 
   function handleMouseOutBubble(d, i) {
-    if (this.getAttribute("entity-type") == "constructor") {
-      document.getElementById('constructor-detail').classList.toggle('closed');
-      selectedConstructor = null;
-      clearCurrentConstructorTable();
-    } else if (this.getAttribute("entity-type") == "driver") {
-      document.getElementById('driver-detail').classList.toggle('closed');
-      selectedDriver = null;
-      clearCurrentDriverTable();
-    } else if (this.getAttribute("entity-type") == "driver-year") {
-      document.getElementById('driver-year-detail').classList.toggle('closed');
-      // selectedDriverYearDetail = driverYearDetails.find(c => (c.id == d.driverId) )
-      clearCurrentDriverYearDetailTable();
-    }
+    document.getElementById('driver-detail').classList.toggle('closed');
+    selectedDriver = null;
+    clearCurrentDriverTable();
     d3.select(this).attr("r", d.radius);
   }
 
-  function populateCurrentConstructorTable(selectedConstructor) {
-    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
-    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
-    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
-    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
-  }
-
-  function clearCurrentConstructorTable() {
-    document.getElementById("td-constructor-name").innerHTML = '';
-    document.getElementById("td-constructor-nationality").innerHTML = '';
-    document.getElementById("td-constructor-races").innerHTML = '';
-    document.getElementById("td-constructor-wins").innerHTML = '';
-  }
-
-  function handleMouseClickBubble(d, i) {
-    if (this.getAttribute("entity-type") == "constructor") {
-      selectedConstructor = constructor_arr.find(c => c.id == d.id);
-      console.log("selected constructor", selectedConstructor);
-      document.getElementById('page-1').classList.toggle('closed');
-      loadDriversPage(selectedConstructor);
-    } else if (this.getAttribute("entity-type") == "driver") {
-      selectedDriver = driver_arr.find(c => c.id == d.id);
-      console.log("selected driver", selectedDriver);
-      document.getElementById('page-2').classList.toggle('closed');
-      loadSingleDriverPage(selectedDriver, selectedConstructor);
-    }
-  }
 
 
   function toggleTimeline() {
@@ -828,5 +773,12 @@
     } else {
       window.location.reload();
     }
+  }
+
+  function handleMouseClick(d, i) {
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("driver_history.html");
+    window.location = redirectPath.join("/") + `?d=${this.getAttribute("driver-id")}&c=${windowConstructorId}`;
   }
 </script>
