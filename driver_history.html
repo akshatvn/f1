@@ -66,76 +66,6 @@
     }
   };
 
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
-  var xScale = d3.scaleLinear().range([0, width]);
-  var yScale = d3.scaleLinear().rangeRound([height, 0]);
-
-  var yaxis = d3.axisLeft().scale(yScale);
-  var xaxis = d3.axisBottom().scale(xScale);
-
-  function make_x_gridlines() {
-    return d3.axisBottom(xScale)
-      .ticks(5)
-  }
-
-  // gridlines in y axis function
-  function make_y_gridlines() {
-    return d3.axisLeft(yScale)
-      .ticks(5)
-  }
-
-
-  var svg = d3.select("#page-1-vis").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform",
-      "translate(" + margin.left + "," + margin.top + ")");
-  svg.append("g")
-    .attr("class", "axis")
-    .attr("class", "myXaxis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xaxis);
-
-  svg.append("g")
-    .attr("class", "axis")
-    .attr("class", "myYaxis")
-    .call(yaxis)
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("dy", ".75em")
-    .attr("y", 6)
-    .style("text-anchor", "end")
-    .text("Wins");
-  ;
-
-  var line = d3.line()
-    .x(function (d) {
-      return xScale(d.year);
-    })
-    .y(function (d) {
-      return !d.wins ? null : yScale(d.wins);
-    });
-
-
-  svg.append("g")
-    .attr("class", "grid")
-    .attr("transform", "translate(0," + height + ")")
-    .call(make_x_gridlines()
-      .tickSize(-height)
-      .tickFormat("")
-    );
-
-  // add the Y gridlines
-  svg.append("g")
-    .attr("class", "grid")
-    .call(make_y_gridlines()
-      .tickSize(-width)
-      .tickFormat("")
-    );
 
   function gotoAllConstructors() {
     let split_path = window.location.pathname.split("/");
@@ -151,6 +81,15 @@
     window.location = redirectPath.join("/") + `?c=${windowConstructorId}`;
   }
 
+  function populatePageTitle() {
+    document.getElementById("page-title").innerHTML =
+      windowDriver.forename + ' ' + windowDriver.surname + "'s Victories at a Glance";
+    document.getElementById("nav-bar").innerHTML =
+      "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" +
+      "<a class='nav' onclick='gotoConstructor()'> " + windowConstructor.name + " 》</a>" +
+      windowDriver.surname;
+  }
+
   async function loadAllData() {
 
     if (!drivers) {
@@ -161,8 +100,6 @@
       driverById[drivers[i].driverId] = drivers[i];
     }
     windowDriver = driverById[windowDriverId];
-    document.getElementById("page-title").innerHTML =
-      windowDriver.forename + ' ' + windowDriver.surname + "'s Victories at a Glance";
 
     if (!constructors) {
       constructors = await d3.csv(csv_root + "/data/constructors.csv");
@@ -173,18 +110,12 @@
     }
     windowConstructor = constructorById[windowConstructorId];
 
-
-    document.getElementById("nav-bar").innerHTML =
-      "<a class='nav' onclick='gotoAllConstructors()'> All Constructors 》</a>" +
-      "<a class='nav' onclick='gotoConstructor()'> " + windowConstructor.name + " 》</a>" +
-      windowDriver.surname;
-
+    populatePageTitle();
 
     if (!races) {
       races = await d3.csv(csv_root + "/data/races.csv");
       delete races.columns;
     }
-
 
     if (!results) {
       results = await d3.csv(csv_root + "/data/results.csv");
@@ -194,198 +125,229 @@
       return r.driverId == windowDriverId;
     });
 
+    allRaceIds = results.map(r => r.raceId);
+
     for (i = 0; i < races.length; i++) {
       raceById[races[i].raceId] = races[i];
     }
+    races = races.filter(c => allRaceIds.indexOf(c.raceId) != -1)
 
-
-    for (i = 0; i < drivers.length; i++) {
-      driverById[drivers[i].driverId] = drivers[i];
-    }
-
-
-    for (i = 0; i < results.length; i++) {
-      let result = results[i];
-      console.log("result", result);
-      let race = raceById[result.raceId];
-      if (race) {
-        resultYear = race.year;
-        driverById[results[i].driverId].wins = driverById[result.driverId].wins || 0;
-        driverById[result.driverId].races = driverById[result.driverId].races || 0;
-        driverById[result.driverId].races += 1;
-        if (!driverById[result.driverId].years) {
-          driverById[result.driverId].years = []
-        }
-        if (driverById[result.driverId].years.indexOf(resultYear) == -1) {
-          driverById[result.driverId].years.push(resultYear);
-        }
-
-        if (result.position === "1") {
-          driverById[result.driverId].wins += 1;
-        }
-      }
-    }
 
     loadPage1();
   }
 
   function loadPage1() {
-    page1DataByYear = {};
-    page1DataByDriver = {};
-    for (i = 0; i < results.length; i++) {
-      let result = results[i];
-      if (result['position'] === "1") {
-        let race = raceById[result.raceId];
-        if (!race) {
-          console.error("could not find race with ID ", result.raceId);
-        } else {
-          let resultYear = raceById[result.raceId].year;
-          // let driverName = driverById[result.driverId].name;
-          page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
-          page1DataByYear[resultYear][result.driverId] = page1DataByYear[resultYear][result.driverId] || 0;
-          page1DataByYear[resultYear][result.driverId] += 1
+    var chartData = []; // array of {year:, constructor: points}
+    let groupedData = {};
+    let allConstructors = [];
+    let maxPoints = 0;
+    let yearWins = {};
+
+    for (let i = 0; i < races.length; i++) {
+      let race = races[i];
+      let result = results.find(c => c.raceId == race.raceId);
+      let constructor = constructors.find(c => c.constructorId == result.constructorId);
+
+      if (!groupedData[race.year]) {
+        groupedData[race.year] = {year: race.year}
+      }
+      if (!groupedData[race.year][constructor.constructorId]) {
+        groupedData[race.year][constructor.constructorId] = 0
+      }
+
+      if (result.position === "1") {
+        groupedData[race.year][constructor.constructorId] += 1;
+        yearWins[race.year] += 1;
+      }
+
+
+      if ((allConstructors.indexOf(constructor.constructorId) == -1) && (groupedData[race.year][constructor.constructorId] > 0)) {
+        allConstructors.push(constructor.constructorId);
+      }
+    }
+    console.log("groupedData", groupedData);
+
+    for (const k in groupedData) {
+      chartData.push(groupedData[k])
+    }
+
+    for (let i = 0; i < chartData.length; i++) {
+      row = chartData[i];
+      for (const k in row) {
+        if (k != 'year' && k != 'totalWins') {
+          chartData[i]['totalWins'] = (chartData[i]['totalWins'] || 0) + row[k];
+          if (maxPoints < chartData[i]['totalWins']) {
+            maxPoints = chartData[i]['totalWins'];
+          }
         }
       }
     }
+    chartData = chartData.filter(c => c.totalWins > 0);
+    chartYears = chartData.map(c => c.year);
+    const colorMap = {};
+    const colors = allConstructors.map((c) => {
+      con = constructorById[c];
+      color = con.color;
+      colorMap[color] = colorMap[color] || [];
+      colorMap[color].push(con.name);
+      return color;
+    });
 
-    console.log("page1DataByYear", page1DataByYear);
-    for (year in page1DataByYear) {
-      for (driverId in page1DataByYear[year]) {
-        page1DataByDriver[driverId] = page1DataByDriver[driverId] || [];
-        page1DataByDriver[driverId].push({
-          year: year,
-          wins: page1DataByYear[year][driverId],
-          // cumulativeWins:
-        })
-      }
-    }
+    var color = d3.scaleOrdinal()
+      .domain(allConstructors)
+      .range(colors);
 
-    console.log("page1DataByDriver", page1DataByDriver);
-
-    // console.log("page1DataByDriver", page1DataByDriver);
-    yearlyWinData = [];
-    for (driverId in page1DataByDriver) {
-      yearlyWinData.push({
-          driverId: driverId,
-          values: page1DataByDriver[driverId]
-        }
-      )
-    }
-
-
-    // page1Data = [];
-
-    // console.log("page1Data", page1Data);
-
-    console.log("yearlyWinData", yearlyWinData);
-
-
-    // console.log("yearlyWinData", yearlyWinData);
-
-    cumulativeWinData = [];
-    cumulativeByDriver = {};
-    for (year in page1DataByYear) {
-      for (driverId in page1DataByYear[year]) {
-        cumulativeByDriver[driverId] = cumulativeByDriver[driverId] || {};
-        cumulativeByDriver[driverId]['so_far'] = cumulativeByDriver[driverId]['so_far'] || 0;
-        cumulativeByDriver[driverId]['so_far'] += +page1DataByYear[year][driverId];
-        cumulativeByDriver[driverId]['values'] = cumulativeByDriver[driverId]['values'] || []
-        cumulativeByDriver[driverId]['values'].push({
-          year: year,
-          wins: cumulativeByDriver[driverId]['so_far']
-        })
-
-      }
-
-    }
-
-    for (driverId in cumulativeByDriver) {
-      cumulativeWinData.push({
-          driverId: driverId,
-          values: cumulativeByDriver[driverId]['values']
-        }
-      )
-    }
-
-    console.log("cumulativeByDriver", cumulativeByDriver);
-
-
-    console.log("cumulativeWinData", cumulativeWinData);
-
-
-    // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut]);
-    updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut]);
-
+    console.log("chartData", chartData);
+    console.log("maxPoints", maxPoints);
+    updateBarChart({
+      chartData: chartData,
+      chartYears: chartYears,
+      allConstructors: allConstructors,
+      maxPoints: maxPoints,
+      color: color,
+      colorMap: colorMap,
+      colors: colors
+    });
   }
 
-  // [
-  //   {
-  //    driverId: '51'
-  //    values: [
-  //      {'1950': 6}
-  //       {}
-  //    ]
-  //   }
-  // ]
-  function updateLineChart(formattedData, mouseHandlers) {
-    xScale.domain([
-      d3.min(formattedData, function (c) {
-        return d3.min(c.values, function (d) {
-          return d.year;
-        });
-      }),
-      d3.max(formattedData, function (c) {
-        return d3.max(c.values, function (d) {
-          return d.year;
-        });
-      })
-    ]);
+  function updateBarChart(options) {
+    const {chartData, color, allConstructors, chartYears, maxPoints, colorMap, colors} = options;
 
-    yScale.domain([
-      0,
-      d3.max(formattedData, function (c) {
-        return d3.max(c.values, function (d) {
-          return d.wins + 4;
-        });
-      })
-    ]);
-    svg.selectAll(".myXaxis").transition()
-      .duration(500)
-      .call(xaxis);
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
 
-    svg.selectAll(".myYaxis")
-      .transition()
-      .duration(500)
-      .call(yaxis);
 
-    const lines = svg.selectAll("chartLine")
-      .data(formattedData)
-      .enter()
+    var svg = d3.select("#page-1-vis")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
       .append("g")
-      .attr("class", "chartLine-g")
-      .append("path")
-      .attr("class", "chartLine")
-      .attr("d", function (d) {
-        return line(d.values);
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    var x = d3.scaleBand()
+      .domain(chartYears)
+      .range([0, width])
+      .padding([0.2]);
+
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x).tickSizeOuter(0))
+      .call(g => g.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.bottom / 4)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "end")
+        .text("Year"));
+
+    var y = d3.scaleLinear()
+      .domain([0, maxPoints])
+      .range([height, 0]);
+
+    svg.append("g")
+      .call(d3.axisLeft(y))
+      .call(g => g.append("text")
+        .attr("x", -height / 8)
+        .attr("y", width / 3)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "end")
+        .text("Wins"));
+
+
+    function make_x_gridlines() {
+      return d3.axisBottom(x)
+        .ticks(5)
+    }
+
+    // gridlines in y axis function
+    function make_y_gridlines() {
+      return d3.axisLeft(y)
+        .ticks(5)
+    }
+
+
+    svg.append("g")
+      .attr("class", "grid")
+      .attr("transform", "translate(0," + height + ")")
+      .call(make_x_gridlines()
+        .tickSize(-height)
+        .tickFormat("")
+      );
+
+    // add the Y gridlines
+    svg.append("g")
+      .attr("class", "grid")
+      .call(make_y_gridlines()
+        .tickSize(-width)
+        .tickFormat("")
+      );
+
+
+    console.log("inside updateBarChart", options);
+
+
+    var stackedData = d3.stack()
+      .keys(allConstructors)
+      (chartData);
+
+    svg.append("g")
+      .selectAll("g")
+      .data(stackedData)
+      .enter().append("g")
+      .attr("fill", function (d) {
+        console.log(`COLOR: key: ${d.key} ; color: ${color(d.key)} ; constructor: ${colorMap[color(d.key)]} `);
+        return color(d.key).length == 0 ? defaultConstructorColor : color(d.key);
       })
-      .attr("driver-id", function (d) {
-        return d.driverId;
+      .attr("data-constructor-name", function (d) {
+        console.log(`key: ${d.key} ; color: ${color(d.key)} ; constructor: ${colorMap[color(d.key)]} `);
+        return colorMap[color(d.key)];
       })
-      .attr("stroke", function (d) {
-        return windowConstructor.color;
+      .selectAll("rect")
+      .data(function (d) {
+        return d;
       })
-      .attr("stroke-width", 3)
-    ;
+      .enter().append("rect")
+      .attr("x", function (d) {
+        return x(d.data.year);
+      })
+      .attr("y", function (d) {
+        return y(d[1]);
+      })
+      .attr("width", x.bandwidth())
+      .attr("entity-type", "driver-year")
+      .attr("height", function (d) {
+        return y(d[0]) - y(d[1]);
+        // return y(5) - y(7);
+      })
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut);
+
+    var legend = svg.selectAll(".legend")
+      .data(colors)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function (d, i) {
+        return "translate("+ -width +"," + i * 19 + ")";
+      });
+
+    legend.append("rect")
+      .attr("x", width+1)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", function (d, i) {
+        return colors[i];
+      });
 
 
-    lines
-      .merge(lines)
-      .transition()
-      .duration(1000);
-
-
-    lines.on("mouseover", mouseHandlers[0])
-      .on("mouseout", mouseHandlers[1]);
+    legend.append("text")
+      .attr("x", width + 20)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "start")
+      .text(function (d, i) {
+        return colorMap[d].join();
+      });
   }
 
 

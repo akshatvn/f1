@@ -97,3 +97,7 @@ path {
 .tooltip-year, .tooltip-wins {
     font-weight: bold;
 }
+
+.legend {
+    background: aliceblue;
+}
