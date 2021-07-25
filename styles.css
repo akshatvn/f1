@@ -101,3 +101,13 @@ path {
 .legend {
     background: aliceblue;
 }
+
+#view-toggle-btn {
+    position:absolute;
+    right:10%;
+    color: red;
+}
+
+#view-toggle-btn:hover {
+    color: darkblue;
+}
