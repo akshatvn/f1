@@ -15,7 +15,7 @@
   <div id="nav-row">
     <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
   </div>
-  
+
 
   <div id="page-1-vis-wrap" class="float-container">
     <div id="page-1-vis">
@@ -91,7 +91,7 @@
     var yScale = d3.scaleLinear().rangeRound([height, 0]);
 
     var yaxis = d3.axisLeft().scale(yScale);
-    var xaxis = d3.axisBottom().scale(xScale);
+    var xaxis = d3.axisBottom().scale(xScale).tickFormat(d3.format("d"));
 
     function make_x_gridlines() {
       return d3.axisBottom(xScale)
