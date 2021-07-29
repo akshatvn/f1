@@ -117,7 +117,6 @@ path {
 }
 
 
-
 #view-toggle-btn:hover {
     color: darkblue;
 }
@@ -137,4 +136,12 @@ path {
     border-bottom: 1px solid #333333;
     border-left: 1px solid #CCCCCC;
     cursor: pointer;
+}
+
+.footer {
+    font-size: 12px;
+}
+
+.nav-tip {
+    font-style: italic;
 }

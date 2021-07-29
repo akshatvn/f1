@@ -6,15 +6,18 @@
 <body onload="loadAllData()">
 <h1>Formula 1 World Championships (1950 - 2020)</h1>
 <div id="page-1" class="page">
+
   <h3 id="nav-bar"></h3>
+  <p class="nav-tip"><span style="font-weight: bold">Nav Tip: </span>Click on the breadcrumbs at the top of the page to
+    go back to the previous scene</p>
   <div id="page-1-description" class="page-description">
     <h3 id="page-title"></h3>
   </div>
 
-  <div class="float-container" >
+  <div class="float-container">
     <div id="page-1-vis"></div>
     <div id="driver-year-detail" class="float-child custom-tooltip closed">
-     <table>
+      <table>
         <tr>
           <td id="td-driver-year-wins" class="data"></td>
         </tr>
@@ -23,9 +26,12 @@
         </tr>
       </table>
     </div>
-    <p>Each bar represents the number of wins in that year by this driver. Although unusual, some drivers have changed teams mid-season</p>
+    <p>Each bar represents the number of wins in that year by this driver. Although unusual, some drivers have changed
+      teams mid-season</p>
     <p>Hover over a driver's mark for more details.</p>
-    <p><span style="font-weight: bold">Nav Tip: </span>Click on the breadcrumbs at the top of the page to go back to the previous scene</p>
+    <div class="footer">
+      <p>Data taken from <a href="https://www.kaggle.com/rohanrao/formula-1-world-championship-1950-2020" target="_blank">here</a></p>
+    </div>
   </div>
 </div>
 

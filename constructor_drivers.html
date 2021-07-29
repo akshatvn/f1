@@ -16,6 +16,8 @@
       <h3 id="nav-bar"></h3>
     </div>
     <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
+    <p class="nav-tip"><span style="font-weight: bold">Nav Tip: </span>Click on a driver's mark to go to the next scene, specific to the
+      chosen driver. Click on the breadcrumbs at the top of the page to go back to the previous scene</p>
   </div>
   <div id="page-1-vis-wrap" class="float-container">
     <div id="page-1-vis" class="float-container">
@@ -45,8 +47,11 @@
       </table>
     </div>
     <p>The greater the slope of a line, the more wins per year that driver has accumulated. Some drivers last long with
-      a few wins, while some continue winning regardless of streak. Hovering over the lines or bubbles gives some aggregated information about the driver. </p>
-    <p><span style="font-weight: bold">Nav Tip: </span>Click on a driver's mark to go to the next scene, specific to the chosen driver. Click on the breadcrumbs at the top of the page to go back to the previous scene</p>
+      a few wins, while some continue winning regardless of streak. Hovering over the lines or bubbles gives some
+      aggregated information about the driver. </p>
+<div class="footer">
+  <p>Data taken from <a href="https://www.kaggle.com/rohanrao/formula-1-world-championship-1950-2020" target="_blank">here</a></p>
+</div>
   </div>
 </div>
 
@@ -93,7 +98,7 @@
       {
         note: {
           label: "In terms of victories per year",
-           title: "Vettel was an outlier"
+          title: "Vettel was an outlier"
         },
         x: 749,
         y: 124,
@@ -408,7 +413,7 @@
     //   }
     // ]
     function updateLineChart(formattedData, mouseHandlers) {
-      xScale.domain([ 1950, 2020
+      xScale.domain([1950, 2020
         // d3.min(formattedData, function (c) {
         //   return d3.min(c.values, function (d) {
         //     return d.year - 1;
@@ -484,7 +489,7 @@
 
 
       const makeAnnotations = d3.annotation()
-        // .editMode(true)
+      // .editMode(true)
         .annotations(annotations[windowConstructorId]);
       svg
         .append("g")
