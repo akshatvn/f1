@@ -388,8 +388,7 @@
         .attr("stroke", function (d) {
           return constructorById[d.constructorId].color;
         })
-        .attr("stroke-width", 4);
-      ;
+        .attr("stroke-width", 3);
 
 
       lines
@@ -445,6 +444,7 @@
 
 
     function handleMouseOver(d, i) {
+      this.setAttribute("stroke-width", 7);
       document.getElementById('constructor-detail').classList.remove('closed');
       populateCurrentConstructorTable(constructorById[d.constructorId]);
     }
@@ -457,6 +457,7 @@
     }
 
     function handleMouseOut(d, i) {
+      this.setAttribute("stroke-width", 3);
       document.getElementById('constructor-detail').classList.add('closed');
       selectedConstructor = null;
       clearCurrentConstructorTable();

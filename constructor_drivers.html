@@ -189,10 +189,10 @@
         "translate(" + margin.left + "," + margin.top + ")");
 
     svg.on("mouseover", function () {
-      var coordinates = d3.mouse(this);
-      var x1 = coordinates[0];
-      var y1 = coordinates[1];
-      console.log("x1,y1", x1, y1);
+      // var coordinates = d3.mouse(this);
+      // var x1 = coordinates[0];
+      // var y1 = coordinates[1];
+      // console.log("x1,y1", x1, y1);
     });
     svg.append("g")
       .attr("class", "axis")
@@ -459,7 +459,7 @@
         .attr("stroke", function (d) {
           return windowConstructor.color;
         })
-        .attr("stroke-width", 4)
+        .attr("stroke-width", 3)
       ;
 
       svg.selectAll(".chartLine-g")
@@ -498,12 +498,14 @@
 
 
     function handleMouseOver(d, i) {
+      this.setAttribute("stroke-width", 7);
       document.getElementById('driver-detail').classList.remove('closed');
       populateCurrentDriverTable(driverById[d.driverId]);
     }
 
 
     function handleMouseOut(d, i) {
+      this.setAttribute("stroke-width", 3);
       document.getElementById('driver-detail').classList.add('closed');
       selectedDriver = null;
       clearCurrentDriverTable();
