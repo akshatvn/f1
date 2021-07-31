@@ -444,6 +444,8 @@
 
 
     function handleMouseOver(d, i) {
+      let x = document.getElementsByClassName("chartLine");
+      for (i=0;i<x.length;i++) { x[i].setAttribute("stroke-width", 1)};
       this.setAttribute("stroke-width", 7);
       document.getElementById('constructor-detail').classList.remove('closed');
       populateCurrentConstructorTable(constructorById[d.constructorId]);
@@ -457,7 +459,9 @@
     }
 
     function handleMouseOut(d, i) {
-      this.setAttribute("stroke-width", 3);
+      let x = document.getElementsByClassName("chartLine");
+      for (i=0;i<x.length;i++) { x[i].setAttribute("stroke-width", 3)};
+      // this.setAttribute("stroke-width", 3);
       document.getElementById('constructor-detail').classList.add('closed');
       selectedConstructor = null;
       clearCurrentConstructorTable();

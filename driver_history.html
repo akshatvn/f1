@@ -264,7 +264,6 @@
         .text("Wins"));
 
 
-
     svg.append("g")
       .attr("class", "grid")
       .attr("transform", "translate(0," + height + ")")
@@ -276,7 +275,7 @@
     // add the Y gridlines
     svg.append("g")
       .attr("class", "grid")
-      .call(d3.axisLeft(y)
+      .call(d3.axisLeft(y).tickValues(getTicks(maxPoints + 1))
         .tickSize(-width)
         .tickFormat("")
       );
@@ -346,6 +345,59 @@
       .text(function (d, i) {
         return colorMap[d].join();
       });
+
+    svg.on("mouseover", function () {
+      var coordinates = d3.mouse(this);
+      var x1 = coordinates[0];
+      var y1 = coordinates[1];
+      console.log("x1,y1", x1, y1);
+    });
+
+    const annotations = {
+      '1': [
+        {
+          note: {
+            label: "Starting 2014, Hamilton has been winning more than anyone else every year, for 7 years"
+          },
+          x: 436,
+          y: 43,
+          dx: -200,
+          dy: 12
+        },
+      ],
+      '20': [
+        {
+          note: {
+            label: "The most number of wins by any driver in a single year"
+          },
+          x: 493,
+          y: 36,
+          dx: 90,
+          dy: 50
+        },
+      ],
+      '30': [
+        {
+          note: {
+            label: "The most number of wins by any driver in a single year"
+          },
+          x: 678,
+          y: 33,
+          dx: -200,
+          dy: 12
+        },
+      ]
+    };
+
+    console.log("YO",windowDriverId, annotations[windowDriverId]);
+
+    const makeAnnotations = d3.annotation()
+      .editMode(true)
+      .annotations(annotations[windowDriverId]);
+
+    svg
+      .append("g")
+      .call(makeAnnotations)
   }
 
 
