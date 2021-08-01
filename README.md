@@ -1,4 +1,4 @@
-### CS 416: Narrative Visualization, Supplementary Essay \
+### CS 416: Narrative Visualization, Supplementary Essay
 
 
 The visualization is available here: [https://akshatvn.github.io/f1/constructors_histories.html](https://akshatvn.github.io/f1/constructors_histories.html)
@@ -6,21 +6,23 @@ The visualization is available here: [https://akshatvn.github.io/f1/constructors
 
 #### **Messaging**
 
-Looking at the last 70 years’ F1 race victory data, we can compare constructors and drivers. We can also understand the impact of individual drivers' movements across constructors.
+Looking at the last 70 years’ F1 race victory data, we can compare constructors and drivers. We can also understand the impact of individual drivers' movements across constructors. For example, what happened to Red Bull after Vettel left? Was it a good move for Hamilton from Mclaren to Mercedes?
 
 
 #### **Narrative Structure**
 
-The structure of the visualization is a drill-down story, with a few annotations to make the viewer understand how to interpret the slides.
+The structure of the visualization is a drill-down story, with some annotations to make the viewer understand how to interpret the scenes.
 
 Each scene (except the last) has elements that can be clicked on to take the viewer deeper into the scene. From an overview of all constructors, to a single constructor’s view, to a single driver’s view.
 
 
 #### **Visual Structure**
 
-Each constructor has been assigned a unique color, which is consistent across scenes. As is described at the top of each page, the viewer can navigate to deeper levels by clicking on marks - lines or bubbles. The best performing drivers on the constructor level have been labeled, drawing attention. The breadcrumbs line at the top of the page puts the scene in context, allowing the user to understand how they landed on the scene, while also affording the capability of going back to previous scenes.
+Each constructor has been assigned a unique color, which is consistent across scenes. As is described at the top of each page, the viewer can navigate to deeper levels by clicking on marks - lines or bubbles. The best performing drivers on the constructor level have been labeled, drawing attention. The breadcrumbs line at the top of the page puts the scene in perspective, allowing the user to understand how they landed on the scene, while also affording the capability of going back to previous scenes.
 
-All 3 pages main scenes are charts with year on the x axis and number of wins on the y axis. The last page, which is the driver history page, is a stacked bar chart to better portray the transition of the driver between constructors.
+All 3 pages main scenes are charts with year on the x axis and number of wins on the y axis.
+
+The last scene, which portrays a particular driver’s career, is a stacked bar chart to better convey the transition of the driver between constructors, if any.
 
 
 #### **Scenes**
@@ -34,21 +36,23 @@ The third scene is of a particular driver's history. It shows all the years the 
 
 #### **Annotations**
 
-Some points of interest are annotated, in order to ease understanding the intent of use. The viewer is encouraged to make their own observations as well.
+A visually consistent annotation scheme, using pointing lines and text, has been used to point to some interesting data points for the viewer. They also serve as examples for how the viewer may derive more interesting insights. 
 
 
 #### **Parameters and States**
 
-Parameters are chosen constructor, chosen driver, scene template. Each scene is a combination of the template, the chosen constructor (if any) , a chosen driver (if any) and the view mode. The parameters all come from the URL, and define the template, the text, and the breadcrumbs line.
+The parameters are the chosen constructor, chosen driver, and scene template. Each scene is a combination of the template, the chosen constructor (if any) , the chosen driver (if any) and the view mode. The parameters all come from the URL, and define the template, the text, and the breadcrumbs line. The viewer is however, discouraged to change the parameters directly in the URL as that may lead to unexpected behaviour.
 
 
 #### **Triggers**
 
-Triggers. What are the triggers that connect user actions to changes of state in the narrative visualization? What affordances are provided to the user to communicate to them what options are available to them in the narrative visualization?
+Bringing the mouse pointer over any data item highlights that point by changing size or adding an outline. It also opens a tooltip displaying more information on demand. Some elements can be clicked on, as is highlighted by the changing of the viewer’s cursor to a pointer.
 
-Bringing the mouse pointer over any data item opens a tooltip displaying more information "on demand". Some elements can be clicked on, as is highlighted by changing the cursor to a pointer, enlarging the bubbles.
+The navigation links in the breadcrumbs line are underlined, colored blue and change color on bringing the cursor to them, suggesting that they can be clicked on. 
 
-The navigation links in the breadcrumbs line change color on mouse over too, suggesting that they can be clicked on
+
+### 
+---
 
 
 ### Appendix
@@ -64,3 +68,11 @@ As for the preprocessing, all data from races in 2021 was removed, as the data w
 #### **Code Source**
 
 [https://github.com/akshatvn/f1](https://github.com/akshatvn/f1)
+
+
+**External Libraries Used**
+
+
+
+1. D3.js: [https://d3js.org/d3.v5.min.js](https://d3js.org/d3.v5.min.js)
+2. D3 annotations by Susie Lu [https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js](https://d3js.org/d3.v5.min.js)
