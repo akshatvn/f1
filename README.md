@@ -1,4 +1,4 @@
-### CS 416: Narrative Visualization, Supplementary Essay
+### Narrative Visualization
 
 
 The visualization is available here: [https://akshatvn.github.io/f1/constructors_histories.html](https://akshatvn.github.io/f1/constructors_histories.html)
