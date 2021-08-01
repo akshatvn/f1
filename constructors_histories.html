@@ -140,11 +140,12 @@
       .attr("class", "myYaxis")
       .call(yaxis)
       .call(g => g.append("text")
-        .attr("x", -40)
-        .attr("y", height / 2)
+        .attr("x", -200)
+        .attr("y", -40)
+        .attr("transform", "rotate(-90)")
         .attr("fill", "currentColor")
         .attr("text-anchor", "end")
-        .text("Wins"));
+        .text("Wins, Cumulative →"));
 
 
     var line = d3.line()
